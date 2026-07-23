@@ -1,0 +1,165 @@
+{
+  "schema_version": "1.1.0",
+  "metadata": {
+    "project_name": "Blockable",
+    "ruleset_name": "prototype",
+    "updated_at": "2026-07-24T00:00:00+09:00"
+  },
+  "colors": [
+    {
+      "id": "red",
+      "display_name": "빨간색",
+      "hex": "#E53935"
+    }
+  ],
+  "block_types": [
+    {
+      "id": "normal",
+      "display_name": "일반",
+      "description": ""
+    }
+  ],
+  "effect_definitions": [
+    {
+      "id": "deal_damage",
+      "display_name": "피해",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "minimum": 0
+        }
+      ],
+      "description": ""
+    }
+  ],
+  "blocks": [
+    {
+      "id": "red_domino",
+      "display_name": "붉은 2칸 블록",
+      "type_id": "normal",
+      "color_id": "red",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 2
+          }
+        }
+      ],
+      "tags": [],
+      "description": ""
+    }
+  ],
+  "combinations": [
+    {
+      "id": "red_square",
+      "display_name": "붉은 사각 단조",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "red_domino",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "type",
+            "type_id": "normal"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "red_domino",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "type",
+            "type_id": "normal"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10
+          }
+        }
+      ],
+      "conditional_effects": [
+        {
+          "condition": {
+            "kind": "all_same_color",
+            "parameters": {}
+          },
+          "effects": [
+            {
+              "effect_id": "deal_damage",
+              "order": 1,
+              "parameters": {
+                "amount": 3
+              }
+            }
+          ],
+          "description": "두 블록의 색상이 같으면 추가 피해"
+        }
+      ],
+      "tags": [],
+      "description": ""
+    }
+  ],
+  "color_synergies": [
+    {
+      "id": "red_pair_bonus",
+      "display_name": "붉은 쌍 보너스",
+      "condition": {
+        "kind": "color_count",
+        "parameters": {
+          "color_id": "red",
+          "count": 2
+        }
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 10,
+          "parameters": {
+            "amount": 2
+          }
+        }
+      ],
+      "description": "참여 블록 중 빨간색이 2개면 추가 피해",
+      "enabled": true
+    }
+  ]
+}
