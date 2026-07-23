@@ -28,7 +28,7 @@
 | kind | 추가 필드 | 의미 |
 |---|---|---|
 | `exact_block` | 없음 | `block_id`와 같은 블록만 허용 |
-| `any_block` | 없음 | 같은 모양의 모든 블록 허용 |
+| `any_block` | 없음 | 모양만 일치하면 색상과 블록 ID에 관계없이 허용 |
 | `type` | `type_id` | 같은 모양이며 지정 Type인 블록 허용 |
 | `color` | `color_id` | 같은 모양이며 지정 색상인 블록 허용 |
 | `tag` | `tag` | 같은 모양이며 지정 태그가 있는 블록 허용 |
@@ -110,3 +110,26 @@
 
 동일한 효과의 합산·곱연산·상한 처리 방식은 본 게임 규칙에서 별도로 확정해야
 합니다.
+
+## 효과 입력 폼 메타데이터
+
+`effect_definitions.parameters`에는 편집기에서 일반 입력칸을 만들기 위한 선택
+필드가 포함될 수 있습니다.
+
+```json
+{
+  "key": "buff_id",
+  "value_type": "identifier",
+  "required": true,
+  "display_name": "버프 ID(영문 JSON 값)",
+  "description": ""
+}
+```
+
+- `display_name`: 사용자에게 보여줄 한글 입력 항목명
+- `description`: 입력 도움말
+- `option_labels`: enum의 영문 값에 대응하는 한글 표시 이름
+- `identifier`: 영문 소문자 `snake_case` ID 입력
+
+이 메타데이터는 편집 화면에만 영향을 주며 실제 효과 JSON은 기존처럼
+`effect_id + parameters` 형태로 저장됩니다.

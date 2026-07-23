@@ -49,3 +49,18 @@ def test_version_1_project_is_migrated_to_exact_slots(tmp_path: Path) -> None:
     project = load_project(path)
     assert project.schema_version == "1.1.0"
     assert project.combinations[0].instances[0].match.kind == "exact_block"
+
+
+def test_loading_enriches_builtin_effect_input_metadata() -> None:
+    project = load_project(EXAMPLE)
+    definitions = {item.id: item for item in project.effect_definitions}
+    assert "apply_buff" in definitions
+    damage_parameters = {
+        item.key: item for item in definitions["deal_damage"].parameters
+    }
+    assert damage_parameters["amount"].display_name == "값(피해량)"
+    buff_parameters = {
+        item.key: item for item in definitions["apply_buff"].parameters
+    }
+    assert buff_parameters["buff_name"].display_name == "버프명(한글 설명)"
+    assert buff_parameters["buff_id"].value_type == "identifier"

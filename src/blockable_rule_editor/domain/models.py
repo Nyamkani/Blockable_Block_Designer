@@ -35,6 +35,9 @@ class EffectParameterDefinition:
     minimum: float | None = None
     maximum: float | None = None
     options: list[Any] = field(default_factory=list)
+    display_name: str = ""
+    description: str = ""
+    option_labels: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -141,18 +144,84 @@ def default_effect_definitions() -> list[EffectDefinition]:
             "deal_damage",
             "피해",
             [
-                EffectParameterDefinition("amount", "number", True, minimum=0),
                 EffectParameterDefinition(
-                    "target", "enum", False, options=["enemy", "all_enemies"]
+                    "amount", "number", True, minimum=0, display_name="값(피해량)"
+                ),
+                EffectParameterDefinition(
+                    "target",
+                    "enum",
+                    False,
+                    options=["enemy", "all_enemies"],
+                    display_name="대상",
+                    option_labels={"enemy": "적 1명", "all_enemies": "모든 적"},
                 ),
             ],
         ),
-        EffectDefinition("gain_block", "블록 획득"),
-        EffectDefinition("heal", "회복"),
-        EffectDefinition("apply_status", "상태 적용"),
-        EffectDefinition("draw_block", "블록 뽑기"),
-        EffectDefinition("gain_gold", "골드 획득"),
-        EffectDefinition("modify_next_effect", "다음 효과 변경"),
+        EffectDefinition(
+            "gain_block",
+            "블록 획득",
+            [EffectParameterDefinition("count", "integer", True, minimum=1, display_name="값(개수)")],
+        ),
+        EffectDefinition(
+            "heal",
+            "회복",
+            [EffectParameterDefinition("amount", "number", True, minimum=0, display_name="값(회복량)")],
+        ),
+        EffectDefinition(
+            "apply_status",
+            "상태·디버프 적용",
+            [
+                EffectParameterDefinition(
+                    "status_name", "string", True, display_name="상태명(한글 설명)"
+                ),
+                EffectParameterDefinition(
+                    "status_id", "identifier", True, display_name="상태 ID(영문 JSON 값)"
+                ),
+                EffectParameterDefinition(
+                    "stacks", "integer", False, minimum=1, display_name="값(중첩 수)"
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", False, minimum=1, display_name="지속 턴"
+                ),
+            ],
+        ),
+        EffectDefinition(
+            "apply_buff",
+            "버프 적용",
+            [
+                EffectParameterDefinition(
+                    "buff_name", "string", True, display_name="버프명(한글 설명)"
+                ),
+                EffectParameterDefinition(
+                    "buff_id", "identifier", True, display_name="버프 ID(영문 JSON 값)"
+                ),
+                EffectParameterDefinition(
+                    "amount", "number", False, display_name="값(버프 수치)"
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", False, minimum=1, display_name="지속 턴"
+                ),
+            ],
+        ),
+        EffectDefinition(
+            "draw_block",
+            "블록 뽑기",
+            [EffectParameterDefinition("count", "integer", True, minimum=1, display_name="값(개수)")],
+        ),
+        EffectDefinition(
+            "gain_gold",
+            "골드 획득",
+            [EffectParameterDefinition("amount", "integer", True, minimum=0, display_name="값(골드)")],
+        ),
+        EffectDefinition(
+            "modify_next_effect",
+            "다음 효과 변경",
+            [
+                EffectParameterDefinition(
+                    "multiplier", "number", True, minimum=0, display_name="값(배율)"
+                )
+            ],
+        ),
     ]
 
 

@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from ..domain.models import Effect, EffectDefinition
+from ..domain.models import Effect, EffectDefinition, EffectParameterDefinition
 
 
 class EffectDialog(tk.Toplevel):
@@ -33,44 +32,172 @@ class EffectDialog(tk.Toplevel):
         self.effect_id = tk.StringVar(value=selected_label)
         self.order = tk.StringVar(value=str(effect.order if effect else 0))
         self.description = tk.StringVar(value=effect.description if effect else "")
+        self.initial_effect_id = effect.effect_id if effect else None
+        self.initial_parameters = dict(effect.parameters) if effect else {}
+        self.parameter_inputs: dict[
+            str, tuple[EffectParameterDefinition, tk.Variable, dict[str, str]]
+        ] = {}
 
         body = ttk.Frame(self, padding=12)
         body.grid(sticky="nsew")
         ttk.Label(body, text="효과").grid(row=0, column=0, sticky="w", pady=4)
-        ttk.Combobox(
+        effect_combo = ttk.Combobox(
             body,
             textvariable=self.effect_id,
             values=list(self.effect_labels),
             state="readonly",
             width=34,
-        ).grid(row=0, column=1, sticky="ew")
-        ttk.Label(body, text="순서").grid(row=1, column=0, sticky="w", pady=4)
+        )
+        effect_combo.grid(row=0, column=1, sticky="ew")
+        effect_combo.bind("<<ComboboxSelected>>", lambda _event: self._render_parameters())
+        ttk.Label(body, text="효과 적용 순서").grid(
+            row=1, column=0, sticky="w", pady=4
+        )
         ttk.Entry(body, textvariable=self.order).grid(row=1, column=1, sticky="ew")
-        ttk.Label(body, text="Parameters (JSON 객체)").grid(
+        ttk.Label(body, text="효과 값 설정").grid(
             row=2, column=0, columnspan=2, sticky="w", pady=(8, 2)
         )
-        self.parameters = tk.Text(body, width=48, height=9)
-        self.parameters.grid(row=3, column=0, columnspan=2)
-        self.parameters.insert("1.0", json.dumps(effect.parameters if effect else {}, ensure_ascii=False, indent=2))
+        self.parameter_frame = ttk.LabelFrame(body, text="선택한 효과의 입력값", padding=8)
+        self.parameter_frame.grid(row=3, column=0, columnspan=2, sticky="ew")
         ttk.Label(body, text="설명").grid(row=4, column=0, sticky="w", pady=4)
         ttk.Entry(body, textvariable=self.description).grid(row=4, column=1, sticky="ew")
         buttons = ttk.Frame(body)
         buttons.grid(row=5, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(buttons, text="취소", command=self.destroy).pack(side="right")
         ttk.Button(buttons, text="확인", command=self._accept).pack(side="right", padx=6)
+        self._render_parameters()
         self.transient(master)
         self.grab_set()
 
+    def _selected_definition(self) -> EffectDefinition | None:
+        effect_id = self.effect_labels.get(self.effect_id.get())
+        return next(
+            (item for item in self.definitions if item.id == effect_id),
+            None,
+        )
+
+    def _render_parameters(self) -> None:
+        for child in self.parameter_frame.winfo_children():
+            child.destroy()
+        self.parameter_inputs.clear()
+        definition = self._selected_definition()
+        if not definition:
+            ttk.Label(self.parameter_frame, text="먼저 효과를 선택하세요.").grid(
+                row=0, column=0, sticky="w"
+            )
+            return
+        values = (
+            self.initial_parameters
+            if definition.id == self.initial_effect_id
+            else {}
+        )
+        specifications = list(definition.parameters)
+        known_keys = {item.key for item in specifications}
+        for key, value in values.items():
+            if key not in known_keys:
+                value_type = (
+                    "boolean"
+                    if isinstance(value, bool)
+                    else "integer"
+                    if isinstance(value, int)
+                    else "number"
+                    if isinstance(value, float)
+                    else "string"
+                )
+                specifications.append(
+                    EffectParameterDefinition(
+                        key,
+                        value_type,
+                        False,
+                        display_name=f"기존 값: {key}",
+                    )
+                )
+        if not specifications:
+            ttk.Label(
+                self.parameter_frame,
+                text="이 효과에는 별도의 입력값이 없습니다.",
+            ).grid(row=0, column=0, sticky="w")
+            return
+        for row, specification in enumerate(specifications):
+            required = " *" if specification.required else ""
+            label = specification.display_name or specification.key
+            ttk.Label(self.parameter_frame, text=f"{label}{required}").grid(
+                row=row, column=0, sticky="w", padx=(0, 8), pady=3
+            )
+            current = values.get(specification.key, "")
+            reverse_options: dict[str, str] = {}
+            if specification.value_type == "boolean":
+                variable: tk.Variable = tk.BooleanVar(
+                    value=bool(current) if current != "" else False
+                )
+                widget = ttk.Checkbutton(self.parameter_frame, variable=variable)
+            elif specification.value_type == "enum":
+                labels = {
+                    value: specification.option_labels.get(str(value), str(value))
+                    for value in specification.options
+                }
+                reverse_options = {label: str(value) for value, label in labels.items()}
+                selected = labels.get(current, "")
+                variable = tk.StringVar(value=selected)
+                widget = ttk.Combobox(
+                    self.parameter_frame,
+                    textvariable=variable,
+                    values=list(reverse_options),
+                    state="readonly",
+                    width=28,
+                )
+            else:
+                variable = tk.StringVar(value="" if current == "" else str(current))
+                widget = ttk.Entry(
+                    self.parameter_frame, textvariable=variable, width=31
+                )
+            widget.grid(row=row, column=1, sticky="ew", pady=3)
+            if specification.description:
+                ttk.Label(
+                    self.parameter_frame,
+                    text=specification.description,
+                    foreground="#64748B",
+                ).grid(row=row, column=2, sticky="w", padx=(6, 0))
+            self.parameter_inputs[specification.key] = (
+                specification,
+                variable,
+                reverse_options,
+            )
+        self.parameter_frame.columnconfigure(1, weight=1)
+
+    def _parameter_values(self) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, (specification, variable, reverse_options) in self.parameter_inputs.items():
+            raw = variable.get()
+            if specification.value_type == "boolean":
+                if specification.required or raw:
+                    result[key] = bool(raw)
+                continue
+            text = str(raw).strip()
+            if not text:
+                if specification.required:
+                    raise ValueError(
+                        f"'{specification.display_name or key}' 값을 입력하세요."
+                    )
+                continue
+            if specification.value_type == "integer":
+                result[key] = int(text)
+            elif specification.value_type == "number":
+                result[key] = float(text) if "." in text else int(text)
+            elif specification.value_type == "enum":
+                result[key] = reverse_options.get(text, text)
+            else:
+                result[key] = text
+        return result
+
     def _accept(self) -> None:
         try:
-            parameters = json.loads(self.parameters.get("1.0", "end").strip() or "{}")
-            if not isinstance(parameters, dict):
-                raise ValueError("parameters는 JSON 객체여야 합니다.")
+            parameters = self._parameter_values()
             order = int(self.order.get())
             effect_id = self.effect_labels.get(self.effect_id.get())
             if not effect_id:
                 raise ValueError("효과를 선택하세요.")
-        except (json.JSONDecodeError, ValueError) as error:
+        except ValueError as error:
             messagebox.showerror("입력 오류", str(error), parent=self)
             return
         self.result = Effect(

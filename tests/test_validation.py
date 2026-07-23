@@ -97,3 +97,25 @@ def test_slot_type_and_conditional_color_are_validated() -> None:
     assert "슬롯 Type이 존재하지 않습니다." in messages
     assert "조건의 색상 ID가 존재하지 않습니다." in messages
     assert "색상 개수는 1 이상의 정수여야 합니다." in messages
+
+
+def test_buff_identifier_must_be_snake_case() -> None:
+    project = valid_project()
+    project.blocks[0].effects.append(
+        Effect(
+            "apply_buff",
+            order=1,
+            parameters={
+                "buff_name": "강철 피부",
+                "buff_id": "강철 피부",
+            },
+        )
+    )
+    assert "parameter 'buff_id' 자료형이 다릅니다." in errors(project)
+
+
+def test_shape_only_slot_is_valid() -> None:
+    project = valid_project()
+    for instance in project.combinations[0].instances:
+        instance.match = SlotMatch(kind="any_block")
+    assert errors(project) == []

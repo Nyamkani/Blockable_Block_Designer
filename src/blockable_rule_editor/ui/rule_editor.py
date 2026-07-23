@@ -65,32 +65,24 @@ class ConditionalEffectDialog(tk.Toplevel):
         body = ttk.Frame(self, padding=12)
         body.pack(fill="both", expand=True)
         ttk.Label(body, text="조건").pack(anchor="w")
-        ttk.Combobox(
+        condition_combo = ttk.Combobox(
             body,
             textvariable=self.condition_label,
             values=list(CONDITION_LABELS),
             state="readonly",
-        ).pack(fill="x", pady=(2, 8))
-        ttk.Label(body, text="조건 Parameters (JSON 객체)").pack(anchor="w")
-        self.parameters = tk.Text(body, height=7)
-        self.parameters.pack(fill="x", pady=(2, 8))
-        self.parameters.insert(
-            "1.0",
-            json.dumps(
-                rule.condition.parameters if rule else {},
-                ensure_ascii=False,
-                indent=2,
-            ),
         )
-        ttk.Label(
-            body,
-            text=(
-                "예: 특정 색 포함 {\"color_id\":\"red\"}, 색 개수 "
-                "{\"color_id\":\"red\",\"count\":2}, 지정 색상 구성 "
-                "{\"color_ids\":[\"red\",\"blue\"]}"
-            ),
-            wraplength=520,
-        ).pack(anchor="w", pady=(0, 8))
+        condition_combo.pack(fill="x", pady=(2, 8))
+        condition_combo.bind(
+            "<<ComboboxSelected>>", lambda _event: self._render_condition_inputs()
+        )
+        self.condition_input_frame = ttk.LabelFrame(
+            body, text="조건 값", padding=8
+        )
+        self.condition_input_frame.pack(fill="x", pady=(0, 8))
+        self.condition_inputs: dict[str, tk.StringVar] = {}
+        self.initial_condition_parameters = (
+            dict(rule.condition.parameters) if rule else {}
+        )
         ttk.Label(body, text="조건이 맞을 때 추가할 효과").pack(anchor="w")
         self.effect_list = tk.Listbox(body, height=7)
         self.effect_list.pack(fill="both", expand=True, pady=2)
@@ -107,6 +99,7 @@ class ConditionalEffectDialog(tk.Toplevel):
         footer.pack(fill="x", pady=(12, 0))
         ttk.Button(footer, text="취소", command=self.destroy).pack(side="right")
         ttk.Button(footer, text="확인", command=self._accept).pack(side="right", padx=5)
+        self._render_condition_inputs()
         self._refresh_effects()
         self.transient(master)
         self.grab_set()
@@ -116,6 +109,59 @@ class ConditionalEffectDialog(tk.Toplevel):
             (item for item in self.definitions if item.id == effect_id), None
         )
         return definition.display_name if definition else effect_id
+
+    def _render_condition_inputs(self) -> None:
+        for child in self.condition_input_frame.winfo_children():
+            child.destroy()
+        self.condition_inputs.clear()
+        kind = CONDITION_LABELS[self.condition_label.get()]
+        fields: list[tuple[str, str]] = []
+        if kind == "contains_color":
+            fields = [("color_id", "색상 ID")]
+        elif kind == "color_count":
+            fields = [("color_id", "색상 ID"), ("count", "개수")]
+        elif kind == "color_set":
+            fields = [("color_ids", "색상 ID 목록(쉼표 구분)")]
+        elif kind == "block_count":
+            fields = [("count", "블록 개수")]
+        elif kind == "tag_match":
+            fields = [("tag", "태그")]
+        if not fields:
+            ttk.Label(
+                self.condition_input_frame,
+                text="이 조건은 추가 입력값이 필요하지 않습니다.",
+            ).grid(row=0, column=0, sticky="w")
+            return
+        for row, (key, label) in enumerate(fields):
+            current = self.initial_condition_parameters.get(key, "")
+            if isinstance(current, list):
+                current = ", ".join(str(item) for item in current)
+            variable = tk.StringVar(value=str(current))
+            ttk.Label(self.condition_input_frame, text=label).grid(
+                row=row, column=0, sticky="w", padx=(0, 8), pady=3
+            )
+            ttk.Entry(
+                self.condition_input_frame, textvariable=variable, width=35
+            ).grid(row=row, column=1, sticky="ew", pady=3)
+            self.condition_inputs[key] = variable
+        self.condition_input_frame.columnconfigure(1, weight=1)
+
+    def _condition_parameters(self) -> dict[str, object]:
+        result: dict[str, object] = {}
+        for key, variable in self.condition_inputs.items():
+            value = variable.get().strip()
+            if not value:
+                raise ValueError("조건 값을 모두 입력하세요.")
+            if key == "count":
+                result[key] = int(value)
+            elif key == "color_ids":
+                values = [item.strip() for item in value.split(",") if item.strip()]
+                if not values:
+                    raise ValueError("색상 ID를 하나 이상 입력하세요.")
+                result[key] = values
+            else:
+                result[key] = value
+        return result
 
     def _refresh_effects(self) -> None:
         self.effect_list.delete(0, "end")
@@ -159,12 +205,10 @@ class ConditionalEffectDialog(tk.Toplevel):
 
     def _accept(self) -> None:
         try:
-            parameters = json.loads(self.parameters.get("1.0", "end").strip() or "{}")
-            if not isinstance(parameters, dict):
-                raise ValueError("조건 Parameters는 JSON 객체여야 합니다.")
+            parameters = self._condition_parameters()
             if not self.effects:
                 raise ValueError("추가 효과를 하나 이상 지정하세요.")
-        except (json.JSONDecodeError, ValueError) as error:
+        except ValueError as error:
             messagebox.showerror("입력 오류", str(error), parent=self)
             return
         self.result = ConditionalEffect(
@@ -232,4 +276,3 @@ class ConditionalEffectList(ttk.LabelFrame):
             del self.rules_getter()[selection[0]]
             self.changed()
             self.refresh()
-

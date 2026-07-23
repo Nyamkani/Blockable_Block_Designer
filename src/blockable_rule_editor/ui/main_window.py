@@ -32,7 +32,7 @@ from .rule_editor import (
 
 SLOT_KIND_LABELS = {
     "정확한 블록": "exact_block",
-    "임의 블록": "any_block",
+    "모양만 일치(색상·ID 무시)": "any_block",
     "같은 Type": "type",
     "같은 색상": "color",
     "태그": "tag",
@@ -276,6 +276,11 @@ class MainWindow:
         ttk.Button(slot_frame, text="조건 적용", command=self.apply_slot_match).pack(
             side="left"
         )
+        ttk.Button(
+            center,
+            text="전체 슬롯을 모양만 일치(색상·블록 ID 무시)",
+            command=self.apply_shape_only_to_all_slots,
+        ).pack(pady=(5, 0))
         ttk.Label(
             center,
             text="배치 블록은 슬롯 모양의 기준이며, 조건에 맞는 같은 모양 블록을 허용합니다.",
@@ -864,6 +869,18 @@ class MainWindow:
             color_id=value if kind == "color" else None,
             tag=value if kind == "tag" else None,
         )
+        self.mark_dirty()
+        self._draw_combo()
+
+    def apply_shape_only_to_all_slots(self) -> None:
+        combination = self.current_combination
+        if not combination or not combination.instances:
+            messagebox.showinfo("모양 조합", "블록을 하나 이상 배치한 조합식을 선택하세요.")
+            return
+        for instance in combination.instances:
+            instance.match = SlotMatch(kind="any_block")
+        if self.selected_instance:
+            self._load_slot_match()
         self.mark_dirty()
         self._draw_combo()
 

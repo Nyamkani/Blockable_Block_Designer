@@ -123,6 +123,9 @@ def project_from_dict(data: dict[str, Any]) -> Project:
                 minimum=parameter.get("minimum"),
                 maximum=parameter.get("maximum"),
                 options=list(parameter.get("options", [])),
+                display_name=parameter.get("display_name", ""),
+                description=parameter.get("description", ""),
+                option_labels=dict(parameter.get("option_labels", {})),
             )
             for parameter in item.get("parameters", [])
         ]
@@ -223,6 +226,12 @@ def _parameter_to_dict(parameter: EffectParameterDefinition) -> dict[str, Any]:
         result["maximum"] = parameter.maximum
     if parameter.options:
         result["options"] = parameter.options
+    if parameter.display_name:
+        result["display_name"] = parameter.display_name
+    if parameter.description:
+        result["description"] = parameter.description
+    if parameter.option_labels:
+        result["option_labels"] = parameter.option_labels
     return result
 
 

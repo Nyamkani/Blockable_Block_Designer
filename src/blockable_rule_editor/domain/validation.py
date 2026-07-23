@@ -9,7 +9,13 @@ from .transforms import combination_cells, is_connected, normalize_cells
 
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
-SLOT_MATCH_KINDS = {"exact_block", "any_block", "type", "color", "tag"}
+SLOT_MATCH_KINDS = {
+    "exact_block",
+    "any_block",
+    "type",
+    "color",
+    "tag",
+}
 CONDITION_KINDS = {
     "all_same_color",
     "all_different_colors",
@@ -82,6 +88,8 @@ def _validate_effects(
                 "string": lambda v: isinstance(v, str),
                 "boolean": lambda v: isinstance(v, bool),
                 "enum": lambda v: v in spec.options,
+                "identifier": lambda v: isinstance(v, str)
+                and bool(ID_PATTERN.fullmatch(v)),
             }.get(spec.value_type, lambda _v: True)
             if not valid_type(value):
                 issues.append(
