@@ -472,6 +472,17 @@ class MainWindow:
         self.current_combination = None
         self.selected_instance = None
         self.refresh_all()
+        issues = validate_project(self.project)
+        errors = [item for item in issues if item.severity == "error"]
+        if errors:
+            self._show_issues(issues)
+            messagebox.showwarning(
+                "오류가 있는 초안",
+                (
+                    f"이 파일에는 오류가 {len(errors)}개 있지만 편집을 위해 열었습니다.\n"
+                    "게임에서 사용하기 전에 검사 결과의 오류를 수정하세요."
+                ),
+            )
 
     def save(self) -> None:
         if not self.path:
@@ -481,21 +492,41 @@ class MainWindow:
         errors = [item for item in issues if item.severity == "error"]
         warnings = [item for item in issues if item.severity == "warning"]
         if errors:
-            self._show_issues(issues)
-            messagebox.showerror("저장 실패", f"오류 {len(errors)}개를 먼저 수정하세요.")
-            return
-        if warnings and not messagebox.askyesno(
+            if not messagebox.askyesno(
+                "오류가 있는 초안 저장",
+                (
+                    f"오류 {len(errors)}개와 경고 {len(warnings)}개가 있습니다.\n\n"
+                    "게임에서 정상 규칙으로 사용할 수 없지만 작업 중인 초안으로 "
+                    "저장할 수 있습니다. 그래도 저장하시겠습니까?"
+                ),
+            ):
+                self._show_issues(issues)
+                return
+        elif warnings and not messagebox.askyesno(
             "검증 경고", f"경고가 {len(warnings)}개 있습니다. 그래도 저장하시겠습니까?"
         ):
             self._show_issues(issues)
             return
         try:
-            save_project(self.project, self.path, allow_warnings=True)
+            save_project(
+                self.project,
+                self.path,
+                allow_warnings=True,
+                allow_errors=bool(errors),
+            )
         except ProjectFileError as error:
             messagebox.showerror("저장 실패", str(error))
             return
         self.dirty = False
         self.refresh_all()
+        if errors:
+            messagebox.showinfo(
+                "초안 저장 완료",
+                (
+                    "오류가 포함된 초안을 저장했습니다.\n"
+                    "metadata.validation_status는 'invalid'로 기록되었습니다."
+                ),
+            )
 
     def save_as(self) -> None:
         filename = filedialog.asksaveasfilename(

@@ -44,17 +44,26 @@ def errors(project: Project) -> list[str]:
     ]
 
 
+def warnings(project: Project) -> list[str]:
+    return [
+        issue.message
+        for issue in validate_project(project)
+        if issue.severity == "warning"
+    ]
+
+
 def test_valid_project_has_no_errors() -> None:
     assert errors(valid_project()) == []
 
 
-def test_disconnected_block_and_broken_reference_are_errors() -> None:
+def test_disconnected_block_is_warning_but_broken_reference_is_error() -> None:
     project = valid_project()
     project.blocks[0].cells = [Cell(0, 0), Cell(2, 0)]
     project.blocks[0].type_id = "missing"
     messages = errors(project)
-    assert "블록 모양이 분리되어 있습니다." in messages
+    assert not any("블록 모양이 분리" in message for message in messages)
     assert "존재하지 않는 type을 참조합니다." in messages
+    assert any("블록 모양이 분리" in message for message in warnings(project))
 
 
 def test_overlap_is_error() -> None:
@@ -77,7 +86,18 @@ def test_invalid_ids_and_duplicate_ids_are_errors() -> None:
     project.block_types[0].id = "Not Valid"
     messages = errors(project)
     assert "ID가 중복되었습니다." in messages
-    assert "ID 형식이 올바르지 않습니다." in messages
+    assert "ID에는 공백을 사용할 수 없습니다." in messages
+
+
+def test_project_ids_may_start_with_number_uppercase_or_korean() -> None:
+    project = valid_project()
+    project.block_types[0].id = "1일반-Type"
+    project.blocks[0].type_id = "1일반-Type"
+    project.blocks[0].id = "블록A"
+    for instance in project.combinations[0].instances:
+        instance.block_id = "블록A"
+    project.combinations[0].id = "2HitCombo"
+    assert errors(project) == []
 
 
 def test_slot_type_and_conditional_color_are_validated() -> None:

@@ -7,7 +7,8 @@ from typing import Any
 from .models import Effect, EffectDefinition, Project, RuleCondition
 from .transforms import combination_cells, is_connected, normalize_cells
 
-ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
+PROJECT_ID_PATTERN = re.compile(r"^\S+$")
+SNAKE_CASE_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 HEX_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 SLOT_MATCH_KINDS = {
     "exact_block",
@@ -40,9 +41,13 @@ def _ids(items: list[Any], location: str, issues: list[ValidationIssue]) -> set[
     for item in items:
         if not item.id:
             issues.append(ValidationIssue("error", location, "ID가 없습니다."))
-        elif not ID_PATTERN.fullmatch(item.id):
+        elif not PROJECT_ID_PATTERN.fullmatch(item.id):
             issues.append(
-                ValidationIssue("error", f"{location}:{item.id}", "ID 형식이 올바르지 않습니다.")
+                ValidationIssue(
+                    "error",
+                    f"{location}:{item.id}",
+                    "ID에는 공백을 사용할 수 없습니다.",
+                )
             )
         elif item.id in seen:
             issues.append(
@@ -89,7 +94,7 @@ def _validate_effects(
                 "boolean": lambda v: isinstance(v, bool),
                 "enum": lambda v: v in spec.options,
                 "identifier": lambda v: isinstance(v, str)
-                and bool(ID_PATTERN.fullmatch(v)),
+                and bool(SNAKE_CASE_PATTERN.fullmatch(v)),
             }.get(spec.value_type, lambda _v: True)
             if not valid_type(value):
                 issues.append(
@@ -173,7 +178,13 @@ def validate_project(project: Project) -> list[ValidationIssue]:
         elif len(set(block.cells)) != len(block.cells):
             issues.append(ValidationIssue("error", location, "블록 칸 좌표가 중복되었습니다."))
         elif not is_connected(block.cells):
-            issues.append(ValidationIssue("error", location, "블록 모양이 분리되어 있습니다."))
+            issues.append(
+                ValidationIssue(
+                    "warning",
+                    location,
+                    "블록 모양이 분리되어 있습니다. 의도한 모양인지 확인하세요.",
+                )
+            )
         signature = (
             block.type_id,
             block.color_id,

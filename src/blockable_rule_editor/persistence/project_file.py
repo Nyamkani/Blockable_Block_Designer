@@ -65,7 +65,7 @@ def _upgrade_builtin_effect_definitions(project: Project) -> None:
                 parameter.option_labels = dict(default_parameter.option_labels)
 
 
-def load_project(path: str | Path) -> Project:
+def load_project(path: str | Path, strict: bool = False) -> Project:
     target = Path(path)
     try:
         data = json.loads(target.read_text(encoding="utf-8"))
@@ -78,7 +78,7 @@ def load_project(path: str | Path) -> Project:
             f"(지원: {', '.join(sorted(SUPPORTED_SCHEMA_VERSIONS))})"
         )
     errors = [item for item in validate_project(project) if item.severity == "error"]
-    if errors:
+    if errors and strict:
         summary = "\n".join(f"- {item.location}: {item.message}" for item in errors[:10])
         raise ProjectFileError(f"프로젝트 검증에 실패했습니다.\n{summary}")
     # 1.0 projects map naturally to exact-block slots and no synergy rules.
@@ -98,16 +98,22 @@ def prepare_for_save(project: Project) -> None:
 
 
 def save_project(
-    project: Project, path: str | Path, allow_warnings: bool = False
+    project: Project,
+    path: str | Path,
+    allow_warnings: bool = False,
+    allow_errors: bool = False,
 ) -> list[ValidationIssue]:
     prepare_for_save(project)
     issues = validate_project(project)
     errors = [item for item in issues if item.severity == "error"]
     warnings = [item for item in issues if item.severity == "warning"]
-    if errors:
+    if errors and not allow_errors:
         raise ProjectFileError("검증 오류가 있어 저장할 수 없습니다.")
     if warnings and not allow_warnings:
         raise ProjectFileError("검증 경고를 확인해야 저장할 수 있습니다.")
+    project.metadata["validation_status"] = "invalid" if errors else "valid"
+    project.metadata["validation_error_count"] = len(errors)
+    project.metadata["validation_warning_count"] = len(warnings)
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)

@@ -3,9 +3,13 @@ from pathlib import Path
 
 import pytest
 
-from blockable_rule_editor.domain.models import BlockType, Project
+from blockable_rule_editor.domain.models import BlockType, Combination, Project
 from blockable_rule_editor.persistence.json_codec import project_from_dict, project_to_dict
-from blockable_rule_editor.persistence.project_file import ProjectFileError, load_project
+from blockable_rule_editor.persistence.project_file import (
+    ProjectFileError,
+    load_project,
+    save_project,
+)
 
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "blockable_rules.example.json"
@@ -64,3 +68,24 @@ def test_loading_enriches_builtin_effect_input_metadata() -> None:
     }
     assert buff_parameters["buff_name"].display_name == "버프명(한글 설명)"
     assert buff_parameters["buff_id"].value_type == "identifier"
+
+
+def test_invalid_draft_can_be_saved_and_reopened(tmp_path: Path) -> None:
+    project = Project(block_types=[BlockType("normal", "일반")])
+    project.blocks = []
+    project.combinations = [Combination("empty_recipe", "빈 조합")]
+    path = tmp_path / "invalid_draft.json"
+    issues = save_project(
+        project,
+        path,
+        allow_warnings=True,
+        allow_errors=True,
+    )
+    assert any(item.severity == "error" for item in issues)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["metadata"]["validation_status"] == "invalid"
+    assert data["metadata"]["validation_error_count"] >= 1
+    reopened = load_project(path)
+    assert reopened.combinations[0].id == "empty_recipe"
+    with pytest.raises(ProjectFileError, match="검증에 실패"):
+        load_project(path, strict=True)
