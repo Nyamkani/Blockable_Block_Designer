@@ -139,3 +139,9 @@ def test_shape_only_slot_is_valid() -> None:
     for instance in project.combinations[0].instances:
         instance.match = SlotMatch(kind="any_block")
     assert errors(project) == []
+
+
+def test_combination_instances_do_not_need_to_touch() -> None:
+    project = valid_project()
+    project.combinations[0].instances[1].origin = Cell(2, 2)
+    assert errors(project) == []

@@ -20,7 +20,7 @@ from ..domain.models import (
 from ..domain.transforms import instance_cells
 from ..domain.validation import ValidationIssue, validate_project
 from ..persistence.project_file import ProjectFileError, load_project, save_project
-from ..services.block_service import toggle_cell
+from ..services.block_service import rename_block, toggle_cell
 from ..services.combination_service import can_place
 from .effect_editor import EffectList
 from .grid_canvas import GridCanvas
@@ -173,6 +173,9 @@ class MainWindow:
         ttk.Button(row, text="추가", command=self.add_block).pack(side="left")
         ttk.Button(row, text="복제", command=self.clone_block).pack(side="left", padx=3)
         ttk.Button(row, text="삭제", command=self.delete_block).pack(side="left")
+        ttk.Button(row, text="저장", command=self.save_current_block).pack(
+            side="left", padx=(3, 0)
+        )
 
         center = ttk.Frame(self.block_tab, padding=(12, 0))
         center.pack(side="left", fill="both", expand=True)
@@ -233,6 +236,9 @@ class MainWindow:
         row.pack(fill="x")
         ttk.Button(row, text="추가", command=self.add_combo).pack(side="left")
         ttk.Button(row, text="삭제", command=self.delete_combo).pack(side="left", padx=3)
+        ttk.Button(row, text="저장", command=self.save_current_combination).pack(
+            side="left"
+        )
         ttk.Separator(left).pack(fill="x", pady=10)
         ttk.Label(left, text="배치할 블록").pack(anchor="w")
         self.palette_list = tk.Listbox(left, width=27, height=12)
@@ -488,6 +494,8 @@ class MainWindow:
         if not self.path:
             self.save_as()
             return
+        self._apply_block_form()
+        self._apply_combo_form()
         issues = validate_project(self.project)
         errors = [item for item in issues if item.severity == "error"]
         warnings = [item for item in issues if item.severity == "warning"]
@@ -711,7 +719,7 @@ class MainWindow:
         block = self.current_block
         if not block:
             return
-        block.id = self.block_vars["id"].get().strip()
+        rename_block(self.project, block, self.block_vars["id"].get().strip())
         block.display_name = self.block_vars["name"].get().strip()
         block.type_id = self.block_vars["type"].get()
         block.color_id = self.block_vars["color"].get()
@@ -720,6 +728,26 @@ class MainWindow:
         block.allow_mirroring = self.block_mirror_var.get()
         block.description = self.block_description.get("1.0", "end").strip()
         self.mark_dirty()
+
+    def save_current_block(self) -> None:
+        if not self.current_block:
+            messagebox.showinfo("블록 저장", "저장할 블록을 먼저 선택하세요.")
+            return
+        self._apply_block_form()
+        index = self.project.blocks.index(self.current_block)
+        label = f"{self.current_block.id} — {self.current_block.display_name}"
+        self.block_list.delete(index)
+        self.block_list.insert(index, label)
+        self.block_list.selection_set(index)
+        self.block_list.activate(index)
+        self.palette_list.delete(index)
+        self.palette_list.insert(index, label)
+        self._draw_block()
+        self._draw_combo()
+        messagebox.showinfo(
+            "블록 저장",
+            "현재 블록의 입력값을 적용했습니다. JSON 파일에 기록하려면 상단 저장도 누르세요.",
+        )
 
     def _toggle_block_cell(self, cell: Cell) -> None:
         if self.current_block:
@@ -789,6 +817,26 @@ class MainWindow:
         combo.allow_recipe_mirroring = self.recipe_mirror_var.get()
         combo.description = self.combo_description.get("1.0", "end").strip()
         self.mark_dirty()
+
+    def save_current_combination(self) -> None:
+        if not self.current_combination:
+            messagebox.showinfo("조합식 저장", "저장할 조합식을 먼저 선택하세요.")
+            return
+        self._apply_combo_form()
+        index = self.project.combinations.index(self.current_combination)
+        label = (
+            f"{self.current_combination.id} — "
+            f"{self.current_combination.display_name}"
+        )
+        self.combo_list.delete(index)
+        self.combo_list.insert(index, label)
+        self.combo_list.selection_set(index)
+        self.combo_list.activate(index)
+        self._draw_combo()
+        messagebox.showinfo(
+            "조합식 저장",
+            "현재 조합식의 입력값을 적용했습니다. JSON 파일에 기록하려면 상단 저장도 누르세요.",
+        )
 
     def _combo_grid_click(self, cell: Cell) -> None:
         combo = self.current_combination
