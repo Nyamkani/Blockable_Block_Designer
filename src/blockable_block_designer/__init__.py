@@ -1,4 +1,4 @@
-"""Blockable Block Deigner."""
+"""Blockable Block Designer."""
 
 from .domain.models import Project
 

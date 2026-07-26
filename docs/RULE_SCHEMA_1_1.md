@@ -1,7 +1,7 @@
 # Blockable 규칙 JSON 1.1 추가 계약
 
 이 문서는 `schema_version: "1.1.0"`에서 추가된 조건 슬롯과 시너지 필드를
-설명합니다. 기존 필드는 `BLOCKABLE_RULE_EDITOR_PLAN.md`를 따릅니다.
+설명합니다. 기존 필드는 `BLOCKABLE_BLOCK_DESIGNER_PLAN.md`를 따릅니다.
 
 ## 조건 슬롯
 

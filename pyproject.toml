@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "blockable-block-deigner"
+name = "blockable-block-designer"
 version = "1.2.1"
-description = "Blockable Block Deigner"
+description = "Blockable Block Designer"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = []
@@ -14,7 +14,7 @@ dependencies = []
 dev = ["pytest>=8", "ruff>=0.5"]
 
 [project.scripts]
-blockable-block-deigner = "blockable_block_deigner.__main__:main"
+blockable-block-designer = "blockable_block_designer.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

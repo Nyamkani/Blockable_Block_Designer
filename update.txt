@@ -1,4 +1,4 @@
-Blockable Block Deigner 업데이트 내역
+Blockable Block Designer 업데이트 내역
 현재 버전: v1.2.1
 
 [주요 기능 추가]
@@ -32,7 +32,7 @@ Blockable Block Deigner 업데이트 내역
 - 좌표 정규화와 원자적 파일 저장으로 파일 손상 방지
 - 기존 JSON의 내장 효과 입력 메타데이터 자동 보강
 - 기본 규칙 저장 파일명을 blockable_block_design.json으로 통일
-- Python 패키지 경로를 src/blockable_block_deigner로 통일
+- Python 패키지 경로를 src/blockable_block_designer로 통일
 
 [참고]
 - 이 파일은 변경 내역을 구체적인 과거 버전별로 구분하지 않는다.

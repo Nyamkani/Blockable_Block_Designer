@@ -1,4 +1,4 @@
-from blockable_block_deigner.domain.models import (
+from blockable_block_designer.domain.models import (
     Block,
     BlockInstance,
     BlockType,
@@ -10,7 +10,7 @@ from blockable_block_deigner.domain.models import (
     RuleCondition,
     SlotMatch,
 )
-from blockable_block_deigner.domain.validation import validate_project
+from blockable_block_designer.domain.validation import validate_project
 
 
 def valid_project() -> Project:

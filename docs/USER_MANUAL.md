@@ -1,4 +1,4 @@
-# Blockable Block Deigner 사용 설명서
+# Blockable Block Designer 사용 설명서
 
 현재 프로그램 버전: `v1.2.1`
 
@@ -6,7 +6,7 @@
 
 ## 1. 프로그램 소개
 
-Blockable Block Deigner는 Blockable 웹 게임에서 사용할 다음 데이터를
+Blockable Block Designer는 Blockable 웹 게임에서 사용할 다음 데이터를
 시각적으로 설계하고 JSON 파일로 저장하는 도구입니다.
 
 - 블록의 분류(Type)
@@ -56,13 +56,13 @@ cd Blockable_Design_Program
 현재 위치에 `pyproject.toml`과 `src` 폴더가 있는지 확인한 다음 실행합니다.
 
 ```bash
-PYTHONPATH=src python -m blockable_block_deigner
+PYTHONPATH=src python -m blockable_block_designer
 ```
 
 배포판에 따라 `python` 대신 `python3` 명령을 사용해야 할 수 있습니다.
 
 ```bash
-PYTHONPATH=src python3 -m blockable_block_deigner
+PYTHONPATH=src python3 -m blockable_block_designer
 ```
 
 ### 2.3 Windows PowerShell에서 실행
@@ -79,14 +79,14 @@ PowerShell에서 다음 명령을 차례로 실행합니다.
 
 ```powershell
 $env:PYTHONPATH = "src"
-python -m blockable_block_deigner
+python -m blockable_block_designer
 ```
 
 Windows Python Launcher를 사용하는 경우 다음과 같이 실행할 수도 있습니다.
 
 ```powershell
 $env:PYTHONPATH = "src"
-py -3.12 -m blockable_block_deigner
+py -3.12 -m blockable_block_designer
 ```
 
 `PYTHONPATH` 설정은 현재 PowerShell 창에만 적용됩니다. 새 PowerShell 창에서
@@ -99,18 +99,18 @@ py -3.12 -m blockable_block_deigner
 ```bat
 cd Blockable_Design_Program
 set PYTHONPATH=src
-python -m blockable_block_deigner
+python -m blockable_block_designer
 ```
 
 Python Launcher를 사용하는 경우 마지막 명령을 다음과 같이 바꿀 수 있습니다.
 
 ```bat
-py -3.12 -m blockable_block_deigner
+py -3.12 -m blockable_block_designer
 ```
 
 ### 2.5 정상 실행 확인
 
-정상적으로 실행되면 `Blockable Block Deigner` 창이 열립니다. 다음
+정상적으로 실행되면 `Blockable Block Designer` 창이 열립니다. 다음
 명령으로 설치된 Python 버전을 먼저 확인할 수도 있습니다.
 
 Linux:

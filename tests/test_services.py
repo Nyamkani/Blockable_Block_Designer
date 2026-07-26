@@ -1,4 +1,4 @@
-from blockable_block_deigner.domain.models import (
+from blockable_block_designer.domain.models import (
     Block,
     BlockInstance,
     BlockType,
@@ -6,7 +6,7 @@ from blockable_block_deigner.domain.models import (
     Combination,
     Project,
 )
-from blockable_block_deigner.services.block_service import rename_block
+from blockable_block_designer.services.block_service import rename_block
 
 
 def test_rename_block_updates_combination_references() -> None:

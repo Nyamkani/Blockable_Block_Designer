@@ -42,7 +42,7 @@ SLOT_KIND_LABELS = {
 class MainWindow:
     def __init__(self) -> None:
         self.root = tk.Tk()
-        self.root.title("Blockable Block Deigner")
+        self.root.title("Blockable Block Designer")
         self.root.geometry("1180x760")
         self.root.minsize(980, 650)
         self.project = Project()
@@ -411,7 +411,7 @@ class MainWindow:
 
     def _update_title(self) -> None:
         name = self.path.name if self.path else "새 프로젝트"
-        self.root.title(f"{'*' if self.dirty else ''}{name} — Blockable Block Deigner")
+        self.root.title(f"{'*' if self.dirty else ''}{name} — Blockable Block Designer")
         self.project_path_label.configure(text=f"파일: {self.path or '(저장되지 않음)'}")
         self.project_status_label.configure(
             text="상태: 저장되지 않은 변경 사항 있음" if self.dirty else "상태: 저장됨"

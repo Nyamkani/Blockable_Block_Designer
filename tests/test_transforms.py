@@ -1,5 +1,5 @@
-from blockable_block_deigner.domain.models import Block, BlockInstance, Cell
-from blockable_block_deigner.domain.transforms import (
+from blockable_block_designer.domain.models import Block, BlockInstance, Cell
+from blockable_block_designer.domain.transforms import (
     instance_cells,
     is_connected,
     normalize_cells,

@@ -1,4 +1,4 @@
-# Blockable Block Deigner 기획안
+# Blockable Block Designer 기획안
 
 현재 프로그램 버전: `v1.2.1`
 대상: VS Code Codex를 이용한 구현  
@@ -125,7 +125,7 @@
 ### 4.2 실행 예시
 
 ```bash
-python -m blockable_block_deigner
+python -m blockable_block_designer
 ```
 
 테스트:
@@ -620,11 +620,11 @@ blockable_block_design.json
 ## 13. 권장 프로젝트 구조
 
 ```text
-blockable-block-deigner/
+blockable-block-designer/
 ├── README.md
 ├── pyproject.toml
 ├── src/
-│   └── blockable_block_deigner/
+│   └── blockable_block_designer/
 │       ├── __init__.py
 │       ├── __main__.py
 │       ├── app.py
