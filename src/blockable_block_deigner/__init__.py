@@ -1,6 +1,6 @@
-"""Blockable rule editor."""
+"""Blockable Block Deigner."""
 
 from .domain.models import Project
 
 __all__ = ["Project"]
-__version__ = "0.7.0"
+__version__ = "1.2.1"

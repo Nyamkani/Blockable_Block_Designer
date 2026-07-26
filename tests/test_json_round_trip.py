@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from blockable_rule_editor.domain.models import BlockType, Combination, Project
-from blockable_rule_editor.persistence.json_codec import project_from_dict, project_to_dict
-from blockable_rule_editor.persistence.project_file import (
+from blockable_block_deigner.domain.models import BlockType, Combination, Project
+from blockable_block_deigner.persistence.json_codec import project_from_dict, project_to_dict
+from blockable_block_deigner.persistence.project_file import (
     ProjectFileError,
     load_project,
     save_project,

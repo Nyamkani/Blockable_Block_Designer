@@ -1,13 +1,12 @@
-# Blockable 블록·조합 규칙 편집기 사용 설명서
+# Blockable Block Deigner 사용 설명서
 
-문서 버전: `0.7`
-대상 프로그램: Blockable Rule Editor `0.7.0`
+현재 프로그램 버전: `v1.2.1`
 
 ---
 
 ## 1. 프로그램 소개
 
-Blockable 블록·조합 규칙 편집기는 Blockable 웹 게임에서 사용할 다음 데이터를
+Blockable Block Deigner는 Blockable 웹 게임에서 사용할 다음 데이터를
 시각적으로 설계하고 JSON 파일로 저장하는 도구입니다.
 
 - 블록의 분류(Type)
@@ -57,13 +56,13 @@ cd Blockable_Design_Program
 현재 위치에 `pyproject.toml`과 `src` 폴더가 있는지 확인한 다음 실행합니다.
 
 ```bash
-PYTHONPATH=src python -m blockable_rule_editor
+PYTHONPATH=src python -m blockable_block_deigner
 ```
 
 배포판에 따라 `python` 대신 `python3` 명령을 사용해야 할 수 있습니다.
 
 ```bash
-PYTHONPATH=src python3 -m blockable_rule_editor
+PYTHONPATH=src python3 -m blockable_block_deigner
 ```
 
 ### 2.3 Windows PowerShell에서 실행
@@ -80,14 +79,14 @@ PowerShell에서 다음 명령을 차례로 실행합니다.
 
 ```powershell
 $env:PYTHONPATH = "src"
-python -m blockable_rule_editor
+python -m blockable_block_deigner
 ```
 
 Windows Python Launcher를 사용하는 경우 다음과 같이 실행할 수도 있습니다.
 
 ```powershell
 $env:PYTHONPATH = "src"
-py -3.12 -m blockable_rule_editor
+py -3.12 -m blockable_block_deigner
 ```
 
 `PYTHONPATH` 설정은 현재 PowerShell 창에만 적용됩니다. 새 PowerShell 창에서
@@ -100,18 +99,18 @@ py -3.12 -m blockable_rule_editor
 ```bat
 cd Blockable_Design_Program
 set PYTHONPATH=src
-python -m blockable_rule_editor
+python -m blockable_block_deigner
 ```
 
 Python Launcher를 사용하는 경우 마지막 명령을 다음과 같이 바꿀 수 있습니다.
 
 ```bat
-py -3.12 -m blockable_rule_editor
+py -3.12 -m blockable_block_deigner
 ```
 
 ### 2.5 정상 실행 확인
 
-정상적으로 실행되면 `Blockable 블록·조합 규칙 편집기` 창이 열립니다. 다음
+정상적으로 실행되면 `Blockable Block Deigner` 창이 열립니다. 다음
 명령으로 설치된 Python 버전을 먼저 확인할 수도 있습니다.
 
 Linux:
@@ -280,7 +279,7 @@ Type과 색상을 먼저 준비해야 블록에서 올바르게 선택할 수 �
 같습니다.
 
 ```text
-blockable_rules.json
+blockable_block_design.json
 ```
 
 이후에는 `저장`을 누르면 같은 파일에 저장됩니다. 다른 파일로 보관하려면
@@ -834,7 +833,7 @@ Type: normal
 2. 오류가 있다면 해당 데이터를 수정합니다.
 3. 경고를 확인합니다.
 4. `Ctrl+S`를 누릅니다.
-5. 파일명을 `blockable_rules.json`으로 저장합니다.
+5. 파일명을 `blockable_block_design.json`으로 저장합니다.
 
 ---
 

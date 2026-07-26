@@ -1,6 +1,6 @@
-# Blockable 블록·조합 규칙 편집기 기획안
+# Blockable Block Deigner 기획안
 
-문서 버전: `0.7`
+현재 프로그램 버전: `v1.2.1`
 대상: VS Code Codex를 이용한 구현  
 프로그램 형태: Python 데스크톱 도구  
 출력 대상: React + Phaser 기반 Blockable 웹 게임
@@ -125,7 +125,7 @@
 ### 4.2 실행 예시
 
 ```bash
-python -m blockable_rule_editor
+python -m blockable_block_deigner
 ```
 
 테스트:
@@ -407,7 +407,7 @@ MVP에서는 JSON 기반 정의를 읽어 입력 폼을 생성한다. 완전한 
 기본 출력 파일:
 
 ```text
-blockable_rules.json
+blockable_block_design.json
 ```
 
 ### 10.2 최상위 구조
@@ -620,11 +620,11 @@ blockable_rules.json
 ## 13. 권장 프로젝트 구조
 
 ```text
-blockable-rule-editor/
+blockable-block-deigner/
 ├── README.md
 ├── pyproject.toml
 ├── src/
-│   └── blockable_rule_editor/
+│   └── blockable_block_deigner/
 │       ├── __init__.py
 │       ├── __main__.py
 │       ├── app.py
@@ -758,7 +758,7 @@ GUI 코드와 규칙 계산 코드를 분리한다. 회전, 반전, 좌표 정�
 6. 블록을 회전해 하나의 완성 형상을 만든다.
 7. 완성 조합에 별도의 효과를 지정한다.
 8. 잘못 겹친 배치와 끊어진 참조를 프로그램이 검출한다.
-9. `blockable_rules.json`을 저장한다.
+9. `blockable_block_design.json`을 저장한다.
 10. 저장한 파일을 편집기에서 다시 열었을 때 동일한 블록과 조합식이 복원된다.
 11. 웹 게임에서 파일을 `JSON.parse()` 할 수 있다.
 
