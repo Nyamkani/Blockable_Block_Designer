@@ -103,7 +103,11 @@ def _validate_effects(
                     )
                 )
             if isinstance(value, (int, float)) and not isinstance(value, bool):
-                if spec.minimum is not None and value < spec.minimum:
+                if (
+                    spec.minimum is not None
+                    and value < spec.minimum
+                    and not (spec.allow_negative and value < 0)
+                ):
                     issues.append(
                         ValidationIssue("error", effect_location, f"'{spec.key}'가 최소값보다 작습니다.")
                     )
@@ -123,9 +127,9 @@ def _validate_condition(
         issues.append(ValidationIssue("error", location, "지원하지 않는 조건 종류입니다."))
         return
     parameters = condition.parameters
-    if condition.kind in {"contains_color", "color_count"}:
+    if condition.kind in {"all_same_color", "contains_color", "color_count"}:
         color_id = parameters.get("color_id")
-        if color_id not in color_ids:
+        if color_id is not None and color_id not in color_ids:
             issues.append(ValidationIssue("error", location, "조건의 색상 ID가 존재하지 않습니다."))
     if condition.kind == "color_count":
         count = parameters.get("count")
@@ -159,6 +163,17 @@ def validate_project(project: Project) -> list[ValidationIssue]:
             issues.append(ValidationIssue("error", f"colors:{color.id}", "HEX 형식이 아닙니다."))
 
     definitions = {item.id: item for item in project.effect_definitions}
+    for definition in project.effect_definitions:
+        location = f"effect_definitions:{definition.id}"
+        if definition.id and not SNAKE_CASE_PATTERN.fullmatch(definition.id):
+            issues.append(
+                ValidationIssue(
+                    "error", location, "효과 ID는 영문 소문자 snake_case여야 합니다."
+                )
+            )
+        parameter_keys = [parameter.key for parameter in definition.parameters]
+        if len(parameter_keys) != len(set(parameter_keys)):
+            issues.append(ValidationIssue("error", location, "효과 입력값 키가 중복되었습니다."))
     used_types: set[str] = set()
     used_colors: set[str] = set()
     used_blocks: set[str] = set()

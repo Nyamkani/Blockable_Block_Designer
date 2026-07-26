@@ -4,7 +4,7 @@ import json
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from ..domain.models import ConditionalEffect, Effect, EffectDefinition, RuleCondition
+from ..domain.models import Color, ConditionalEffect, Effect, EffectDefinition, RuleCondition
 from .effect_editor import EffectDialog
 
 CONDITION_LABELS = {
@@ -36,12 +36,16 @@ class ConditionalEffectDialog(tk.Toplevel):
         master: tk.Misc,
         definitions: list[EffectDefinition],
         rule: ConditionalEffect | None = None,
+        colors: list[Color] | None = None,
+        definitions_changed=None,
     ) -> None:
         super().__init__(master)
         self.title("조건부 효과 편집")
         self.geometry("560x520")
         self.result: ConditionalEffect | None = None
         self.definitions = definitions
+        self.colors = colors or []
+        self.definitions_changed = definitions_changed
         self.effects = [
             Effect(
                 effect.effect_id,
@@ -116,7 +120,9 @@ class ConditionalEffectDialog(tk.Toplevel):
         self.condition_inputs.clear()
         kind = CONDITION_LABELS[self.condition_label.get()]
         fields: list[tuple[str, str]] = []
-        if kind == "contains_color":
+        if kind == "all_same_color":
+            fields = [("color_id", "지정 색상 ID(비우면 모든 단일 색상)")]
+        elif kind == "contains_color":
             fields = [("color_id", "색상 ID")]
         elif kind == "color_count":
             fields = [("color_id", "색상 ID"), ("count", "개수")]
@@ -140,9 +146,19 @@ class ConditionalEffectDialog(tk.Toplevel):
             ttk.Label(self.condition_input_frame, text=label).grid(
                 row=row, column=0, sticky="w", padx=(0, 8), pady=3
             )
-            ttk.Entry(
-                self.condition_input_frame, textvariable=variable, width=35
-            ).grid(row=row, column=1, sticky="ew", pady=3)
+            if key in {"color_id", "color_ids"} and self.colors and key == "color_id":
+                widget = ttk.Combobox(
+                    self.condition_input_frame,
+                    textvariable=variable,
+                    values=[""] + [item.id for item in self.colors],
+                    state="readonly",
+                    width=32,
+                )
+            else:
+                widget = ttk.Entry(
+                    self.condition_input_frame, textvariable=variable, width=35
+                )
+            widget.grid(row=row, column=1, sticky="ew", pady=3)
             self.condition_inputs[key] = variable
         self.condition_input_frame.columnconfigure(1, weight=1)
 
@@ -150,8 +166,13 @@ class ConditionalEffectDialog(tk.Toplevel):
         result: dict[str, object] = {}
         for key, variable in self.condition_inputs.items():
             value = variable.get().strip()
-            if not value:
+            if not value and not (
+                CONDITION_LABELS[self.condition_label.get()] == "all_same_color"
+                and key == "color_id"
+            ):
                 raise ValueError("조건 값을 모두 입력하세요.")
+            if not value:
+                continue
             if key == "count":
                 result[key] = int(value)
             elif key == "color_ids":
@@ -173,7 +194,11 @@ class ConditionalEffectDialog(tk.Toplevel):
             )
 
     def _add_effect(self) -> None:
-        dialog = EffectDialog(self, self.definitions)
+        dialog = EffectDialog(
+            self,
+            self.definitions,
+            definitions_changed=self.definitions_changed,
+        )
         self.wait_window(dialog)
         if dialog.result:
             self.effects.append(dialog.result)
@@ -191,7 +216,12 @@ class ConditionalEffectDialog(tk.Toplevel):
         if not selected:
             return
         index, effect = selected
-        dialog = EffectDialog(self, self.definitions, effect)
+        dialog = EffectDialog(
+            self,
+            self.definitions,
+            effect,
+            self.definitions_changed,
+        )
         self.wait_window(dialog)
         if dialog.result:
             self.effects[index] = dialog.result
@@ -227,11 +257,13 @@ class ConditionalEffectList(ttk.LabelFrame):
         definitions_getter,
         changed,
         title: str = "조건부 보너스",
+        definitions_changed=None,
     ) -> None:
         super().__init__(master, text=title, padding=6)
         self.rules_getter = rules_getter
         self.definitions_getter = definitions_getter
         self.changed = changed
+        self.definitions_changed = definitions_changed or changed
         self.listbox = tk.Listbox(self, height=5)
         self.listbox.pack(fill="both", expand=True)
         buttons = ttk.Frame(self)
@@ -249,7 +281,11 @@ class ConditionalEffectList(ttk.LabelFrame):
             )
 
     def add(self) -> None:
-        dialog = ConditionalEffectDialog(self, self.definitions_getter())
+        dialog = ConditionalEffectDialog(
+            self,
+            self.definitions_getter(),
+            definitions_changed=self.definitions_changed,
+        )
         self.wait_window(dialog)
         if dialog.result:
             self.rules_getter().append(dialog.result)
@@ -262,7 +298,10 @@ class ConditionalEffectList(ttk.LabelFrame):
         if not selection:
             return
         dialog = ConditionalEffectDialog(
-            self, self.definitions_getter(), rules[selection[0]]
+            self,
+            self.definitions_getter(),
+            rules[selection[0]],
+            definitions_changed=self.definitions_changed,
         )
         self.wait_window(dialog)
         if dialog.result:

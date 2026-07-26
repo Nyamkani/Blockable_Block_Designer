@@ -63,6 +63,10 @@ def _upgrade_builtin_effect_definitions(project: Project) -> None:
                 parameter.description = default_parameter.description
             if not parameter.option_labels:
                 parameter.option_labels = dict(default_parameter.option_labels)
+            if default_parameter.default is not None and parameter.default is None:
+                parameter.default = default_parameter.default
+            if default_parameter.allow_negative:
+                parameter.allow_negative = True
 
 
 def load_project(path: str | Path, strict: bool = False) -> Project:
@@ -107,6 +111,8 @@ def save_project(
     issues = validate_project(project)
     errors = [item for item in issues if item.severity == "error"]
     warnings = [item for item in issues if item.severity == "warning"]
+    if any(item.message == "블록 인스턴스가 겹칩니다." for item in errors):
+        raise ProjectFileError("조합식의 블록 인스턴스가 겹쳐 저장할 수 없습니다.")
     if errors and not allow_errors:
         raise ProjectFileError("검증 오류가 있어 저장할 수 없습니다.")
     if warnings and not allow_warnings:

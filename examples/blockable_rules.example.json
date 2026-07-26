@@ -28,7 +28,8 @@
           "key": "amount",
           "value_type": "number",
           "required": true,
-          "minimum": 0
+          "minimum": 0,
+          "allow_negative": true
         }
       ],
       "description": ""

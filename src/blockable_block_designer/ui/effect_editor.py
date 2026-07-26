@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from ..domain.models import Effect, EffectDefinition, EffectParameterDefinition
+from .effect_definition_editor import EffectDefinitionDialog
 
 
 class EffectDialog(tk.Toplevel):
@@ -12,15 +13,15 @@ class EffectDialog(tk.Toplevel):
         master: tk.Misc,
         definitions: list[EffectDefinition],
         effect: Effect | None = None,
+        definitions_changed=None,
     ) -> None:
         super().__init__(master)
         self.title("효과 편집")
         self.resizable(False, False)
         self.result: Effect | None = None
         self.definitions = definitions
-        self.effect_labels = {
-            f"{item.display_name} ({item.id})": item.id for item in definitions
-        }
+        self.definitions_changed = definitions_changed
+        self.effect_labels = self._effect_labels()
         selected_label = next(
             (
                 label
@@ -41,15 +42,17 @@ class EffectDialog(tk.Toplevel):
         body = ttk.Frame(self, padding=12)
         body.grid(sticky="nsew")
         ttk.Label(body, text="효과").grid(row=0, column=0, sticky="w", pady=4)
-        effect_combo = ttk.Combobox(
+        self.effect_combo = ttk.Combobox(
             body,
             textvariable=self.effect_id,
             values=list(self.effect_labels),
             state="readonly",
             width=34,
         )
-        effect_combo.grid(row=0, column=1, sticky="ew")
-        effect_combo.bind("<<ComboboxSelected>>", lambda _event: self._render_parameters())
+        self.effect_combo.grid(row=0, column=1, sticky="ew")
+        self.effect_combo.bind(
+            "<<ComboboxSelected>>", lambda _event: self._render_parameters()
+        )
         ttk.Label(body, text="효과 적용 순서").grid(
             row=1, column=0, sticky="w", pady=4
         )
@@ -59,15 +62,54 @@ class EffectDialog(tk.Toplevel):
         )
         self.parameter_frame = ttk.LabelFrame(body, text="선택한 효과의 입력값", padding=8)
         self.parameter_frame.grid(row=3, column=0, columnspan=2, sticky="ew")
-        ttk.Label(body, text="설명").grid(row=4, column=0, sticky="w", pady=4)
-        ttk.Entry(body, textvariable=self.description).grid(row=4, column=1, sticky="ew")
+        create_frame = ttk.LabelFrame(body, text="효과 만들기", padding=8)
+        create_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        ttk.Label(
+            create_frame,
+            text="목록에 없는 효과는 한 번 정의한 뒤 모든 탭에서 다시 사용할 수 있습니다.",
+        ).pack(side="left")
+        ttk.Button(
+            create_frame, text="새 효과 만들기", command=self._create_definition
+        ).pack(side="right", padx=(8, 0))
+        ttk.Label(body, text="설명").grid(row=5, column=0, sticky="w", pady=4)
+        ttk.Entry(body, textvariable=self.description).grid(row=5, column=1, sticky="ew")
         buttons = ttk.Frame(body)
-        buttons.grid(row=5, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        buttons.grid(row=6, column=0, columnspan=2, sticky="e", pady=(12, 0))
         ttk.Button(buttons, text="취소", command=self.destroy).pack(side="right")
         ttk.Button(buttons, text="확인", command=self._accept).pack(side="right", padx=6)
         self._render_parameters()
         self.transient(master)
         self.grab_set()
+
+    def _effect_labels(self) -> dict[str, str]:
+        return {
+            f"{item.display_name} ({item.id})": item.id for item in self.definitions
+        }
+
+    def _create_definition(self) -> None:
+        dialog = EffectDefinitionDialog(self)
+        self.wait_window(dialog)
+        if not dialog.result:
+            return
+        if any(item.id == dialog.result.id for item in self.definitions):
+            messagebox.showerror(
+                "추가 불가", "같은 효과 ID가 이미 존재합니다.", parent=self
+            )
+            return
+        self.definitions.append(dialog.result)
+        if self.definitions_changed:
+            self.definitions_changed()
+        self.effect_labels = self._effect_labels()
+        self.effect_combo.configure(values=list(self.effect_labels))
+        label = next(
+            label
+            for label, effect_id in self.effect_labels.items()
+            if effect_id == dialog.result.id
+        )
+        self.effect_id.set(label)
+        self.initial_effect_id = None
+        self.initial_parameters = {}
+        self._render_parameters()
 
     def _selected_definition(self) -> EffectDefinition | None:
         effect_id = self.effect_labels.get(self.effect_id.get())
@@ -124,7 +166,10 @@ class EffectDialog(tk.Toplevel):
             ttk.Label(self.parameter_frame, text=f"{label}{required}").grid(
                 row=row, column=0, sticky="w", padx=(0, 8), pady=3
             )
-            current = values.get(specification.key, "")
+            current = values.get(
+                specification.key,
+                "" if specification.default is None else specification.default,
+            )
             reverse_options: dict[str, str] = {}
             if specification.value_type == "boolean":
                 variable: tk.Variable = tk.BooleanVar(
@@ -213,11 +258,13 @@ class EffectList(ttk.LabelFrame):
         effects_getter,
         definitions_getter,
         changed,
+        definitions_changed=None,
     ) -> None:
         super().__init__(master, text="효과", padding=6)
         self.effects_getter = effects_getter
         self.definitions_getter = definitions_getter
         self.changed = changed
+        self.definitions_changed = definitions_changed or changed
         self.listbox = tk.Listbox(self, height=5)
         self.listbox.pack(fill="both", expand=True)
         buttons = ttk.Frame(self)
@@ -244,7 +291,11 @@ class EffectList(ttk.LabelFrame):
 
     def add(self) -> None:
         effects = self.effects_getter()
-        dialog = EffectDialog(self, self.definitions_getter())
+        dialog = EffectDialog(
+            self,
+            self.definitions_getter(),
+            definitions_changed=self.definitions_changed,
+        )
         self.wait_window(dialog)
         if dialog.result:
             effects.append(dialog.result)
@@ -258,7 +309,12 @@ class EffectList(ttk.LabelFrame):
             return
         ordered = sorted(enumerate(effects), key=lambda pair: pair[1].order)
         original_index, effect = ordered[selection[0]]
-        dialog = EffectDialog(self, self.definitions_getter(), effect)
+        dialog = EffectDialog(
+            self,
+            self.definitions_getter(),
+            effect,
+            self.definitions_changed,
+        )
         self.wait_window(dialog)
         if dialog.result:
             effects[original_index] = dialog.result

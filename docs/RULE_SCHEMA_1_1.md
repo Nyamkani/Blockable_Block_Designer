@@ -85,7 +85,7 @@
 
 | kind | parameters |
 |---|---|
-| `all_same_color` | `{}` |
+| `all_same_color` | `{}` 또는 `{"color_id": "red"}` |
 | `all_different_colors` | `{}` |
 | `contains_color` | `{"color_id": "red"}` |
 | `color_count` | `{"color_id": "red", "count": 2}` |
@@ -96,6 +96,10 @@
 
 `color_set`은 참여 블록의 색상 구성과 비교합니다. 중복 색상 개수까지 구분해야
 한다면 게임 구현에서 배열을 정렬한 뒤 다중 집합으로 비교하는 것을 권장합니다.
+
+`all_same_color`의 `color_id`는 선택 항목입니다. 값이 있으면 참여 블록이 모두
+같으면서 그 색상 ID와도 일치해야 합니다. 값이 없으면 이전 버전과 같이 색상
+종류와 무관하게 참여 블록의 색상이 모두 같은지만 검사합니다.
 
 ## 적용 순서
 
@@ -130,6 +134,36 @@
 - `description`: 입력 도움말
 - `option_labels`: enum의 영문 값에 대응하는 한글 표시 이름
 - `identifier`: 영문 소문자 `snake_case` ID 입력
+- `default`: 새 효과를 추가할 때 입력칸에 표시할 기본값
+- `allow_negative`: 숫자 입력에서 음수를 정상 값으로 허용할지 여부
+
+효과 정의 자체에는 편집자와 게임 개발자가 용도를 확인할 수 있도록 한글
+`display_name`과 자유 형식 `description`을 함께 저장할 수 있습니다.
 
 이 메타데이터는 편집 화면에만 영향을 주며 실제 효과 JSON은 기존처럼
 `effect_id + parameters` 형태로 저장됩니다.
+
+공격, 방어와 회복을 포함한 조합 최종 수치의 원본은 이 규칙 JSON입니다. 본
+게임은 같은 수치를 별도로 하드코딩하지 않고 블록 효과, 조합 기본 효과, 조건부
+효과와 공통 시너지를 순서대로 합산해야 합니다. 음수 값도 보정값으로 포함합니다.
+
+## 공유 효과 설정 파일
+
+효과 정의만 다른 프로젝트와 공유할 때 기본 파일명은
+`blockable_effect_config.json`입니다. 이 파일은 프로젝트 규칙 JSON이 아니며
+다음 구조를 사용합니다.
+예제는 `examples/blockable_effect_config.example.json`에서 확인할 수 있습니다.
+
+```json
+{
+  "config_version": "1.0.0",
+  "effect_definitions": []
+}
+```
+
+가져올 때 새로운 ID는 추가하고, 기존 ID와 충돌하면 사용자가 전체 덮어쓰기 또는
+중복 건너뛰기를 선택합니다. 블록·조합식에 설정한 실제 효과 값은 이 파일에
+포함하지 않습니다.
+
+조합식 인스턴스 겹침은 편집기의 임시 상태로만 허용됩니다. 겹침이 있는 프로젝트는
+`validation_status: invalid` 초안으로도 파일에 저장할 수 없습니다.

@@ -4,7 +4,12 @@ from pathlib import Path
 import pytest
 
 from blockable_block_designer.domain.models import BlockType, Combination, Project
+from blockable_block_designer.domain.models import EffectDefinition, EffectParameterDefinition
 from blockable_block_designer.persistence.json_codec import project_from_dict, project_to_dict
+from blockable_block_designer.persistence.effect_config import (
+    load_effect_config,
+    save_effect_config,
+)
 from blockable_block_designer.persistence.project_file import (
     ProjectFileError,
     load_project,
@@ -13,6 +18,9 @@ from blockable_block_designer.persistence.project_file import (
 
 
 EXAMPLE = Path(__file__).parents[1] / "examples" / "blockable_rules.example.json"
+EFFECT_CONFIG_EXAMPLE = (
+    Path(__file__).parents[1] / "examples" / "blockable_effect_config.example.json"
+)
 
 
 def test_example_round_trip_preserves_meaning_and_korean() -> None:
@@ -89,3 +97,54 @@ def test_invalid_draft_can_be_saved_and_reopened(tmp_path: Path) -> None:
     assert reopened.combinations[0].id == "empty_recipe"
     with pytest.raises(ProjectFileError, match="검증에 실패"):
         load_project(path, strict=True)
+
+
+def test_custom_effect_description_and_negative_metadata_round_trip() -> None:
+    project = Project(
+        effect_definitions=[
+            EffectDefinition(
+                "damage_each_turn",
+                "매 턴 피해",
+                [
+                    EffectParameterDefinition(
+                        "amount", "number", True,
+                        display_name="턴당 피해량",
+                        description="매 턴 적용할 수치",
+                        default=0,
+                        allow_negative=True,
+                    )
+                ],
+                "지정한 턴 동안 매 턴 피해를 줍니다.",
+            )
+        ]
+    )
+    encoded = project_to_dict(project)
+    restored = project_from_dict(encoded)
+    definition = restored.effect_definitions[0]
+    assert definition.description == "지정한 턴 동안 매 턴 피해를 줍니다."
+    assert definition.parameters[0].description == "매 턴 적용할 수치"
+    assert definition.parameters[0].default == 0
+    assert definition.parameters[0].allow_negative is True
+
+
+def test_effect_config_can_be_shared_between_projects(tmp_path: Path) -> None:
+    definition = EffectDefinition(
+        "custom_damage",
+        "사용자 피해",
+        [
+            EffectParameterDefinition(
+                "amount", "number", True, display_name="피해량", allow_negative=True
+            )
+        ],
+        "공유할 사용자 정의 효과",
+    )
+    path = tmp_path / "blockable_effect_config.json"
+    save_effect_config([definition], path)
+    restored = load_effect_config(path)
+    assert restored == [definition]
+
+
+def test_effect_config_example_is_loadable() -> None:
+    definitions = load_effect_config(EFFECT_CONFIG_EXAMPLE)
+    assert definitions[0].id == "custom_damage_each_turn"
+    assert definitions[0].description

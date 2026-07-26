@@ -27,13 +27,41 @@ class GridCanvas(tk.Canvas):
         self.rows = rows
         self.cell_size = cell_size
         self.on_cell_click = on_click
-        self.bind("<Button-1>", self._clicked)
+        self.on_drag_start: Callable[[Cell], bool] | None = None
+        self.on_drag_move: Callable[[Cell], None] | None = None
+        self.on_drag_end: Callable[[Cell], None] | None = None
+        self._press_cell: Cell | None = None
+        self._dragging = False
+        self.bind("<ButtonPress-1>", self._pressed)
+        self.bind("<B1-Motion>", self._moved)
+        self.bind("<ButtonRelease-1>", self._released)
         self.draw_grid()
 
-    def _clicked(self, event: tk.Event) -> None:
+    def _event_cell(self, event: tk.Event) -> Cell | None:
         x, y = event.x // self.cell_size, event.y // self.cell_size
-        if self.on_cell_click and 0 <= x < self.columns and 0 <= y < self.rows:
-            self.on_cell_click(Cell(x, y))
+        return Cell(x, y) if 0 <= x < self.columns and 0 <= y < self.rows else None
+
+    def _pressed(self, event: tk.Event) -> None:
+        self.focus_set()
+        self._press_cell = self._event_cell(event)
+        self._dragging = bool(
+            self._press_cell and self.on_drag_start and self.on_drag_start(self._press_cell)
+        )
+
+    def _moved(self, event: tk.Event) -> None:
+        cell = self._event_cell(event)
+        if self._dragging and cell and self.on_drag_move:
+            self.on_drag_move(cell)
+
+    def _released(self, event: tk.Event) -> None:
+        cell = self._event_cell(event)
+        if self._dragging:
+            if cell and self.on_drag_end:
+                self.on_drag_end(cell)
+        elif cell and self.on_cell_click:
+            self.on_cell_click(cell)
+        self._press_cell = None
+        self._dragging = False
 
     def draw_grid(self) -> None:
         self.delete("all")
@@ -53,4 +81,3 @@ class GridCanvas(tk.Canvas):
         self.create_rectangle(x1, y1, x2, y2, fill=color, outline=outline, width=2)
         if text:
             self.create_text((x1 + x2) / 2, (y1 + y2) / 2, text=text, fill="white")
-

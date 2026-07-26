@@ -38,6 +38,8 @@ class EffectParameterDefinition:
     display_name: str = ""
     description: str = ""
     option_labels: dict[str, str] = field(default_factory=dict)
+    default: Any = None
+    allow_negative: bool = False
 
 
 @dataclass
@@ -145,7 +147,7 @@ def default_effect_definitions() -> list[EffectDefinition]:
             "피해",
             [
                 EffectParameterDefinition(
-                    "amount", "number", True, minimum=0, display_name="값(피해량)"
+                    "amount", "number", True, display_name="값(피해량)", allow_negative=True
                 ),
                 EffectParameterDefinition(
                     "target",
@@ -165,7 +167,20 @@ def default_effect_definitions() -> list[EffectDefinition]:
         EffectDefinition(
             "heal",
             "회복",
-            [EffectParameterDefinition("amount", "number", True, minimum=0, display_name="값(회복량)")],
+            [
+                EffectParameterDefinition(
+                    "amount", "number", True, display_name="값(회복량)", allow_negative=True
+                )
+            ],
+        ),
+        EffectDefinition(
+            "gain_defense",
+            "방어 획득",
+            [
+                EffectParameterDefinition(
+                    "amount", "number", True, display_name="값(방어량)", allow_negative=True
+                )
+            ],
         ),
         EffectDefinition(
             "apply_status",
@@ -196,7 +211,7 @@ def default_effect_definitions() -> list[EffectDefinition]:
                     "buff_id", "identifier", True, display_name="버프 ID(영문 JSON 값)"
                 ),
                 EffectParameterDefinition(
-                    "amount", "number", False, display_name="값(버프 수치)"
+                    "amount", "number", False, display_name="값(버프 수치)", allow_negative=True
                 ),
                 EffectParameterDefinition(
                     "duration", "integer", False, minimum=1, display_name="지속 턴"
@@ -211,7 +226,11 @@ def default_effect_definitions() -> list[EffectDefinition]:
         EffectDefinition(
             "gain_gold",
             "골드 획득",
-            [EffectParameterDefinition("amount", "integer", True, minimum=0, display_name="값(골드)")],
+            [
+                EffectParameterDefinition(
+                    "amount", "integer", True, display_name="값(골드)", allow_negative=True
+                )
+            ],
         ),
         EffectDefinition(
             "modify_next_effect",
@@ -221,6 +240,103 @@ def default_effect_definitions() -> list[EffectDefinition]:
                     "multiplier", "number", True, minimum=0, display_name="값(배율)"
                 )
             ],
+        ),
+        EffectDefinition(
+            "gain_extra_turn",
+            "추가 턴 진행",
+            [
+                EffectParameterDefinition(
+                    "turns", "integer", True, minimum=1, display_name="추가 턴 수", default=1
+                )
+            ],
+            "현재 행동 뒤에 지정한 수만큼 추가 턴을 진행합니다.",
+        ),
+        EffectDefinition(
+            "repeat_each_turn",
+            "매 턴 효과 반복",
+            [
+                EffectParameterDefinition(
+                    "effect_id", "identifier", True, display_name="반복 효과 ID",
+                    description="매 턴 실행할 별도 효과의 영문 ID입니다.",
+                ),
+                EffectParameterDefinition(
+                    "amount", "number", False, display_name="매 턴 값", allow_negative=True
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", True, minimum=1, display_name="지속 턴", default=1
+                ),
+                EffectParameterDefinition(
+                    "target",
+                    "string",
+                    False,
+                    display_name="대상",
+                    description="게임에서 해석할 대상 ID입니다.",
+                ),
+            ],
+            "지정한 효과를 일정 턴 동안 매 턴 실행합니다.",
+        ),
+        EffectDefinition(
+            "deal_damage_each_turn",
+            "매 턴 공격",
+            [
+                EffectParameterDefinition(
+                    "amount", "number", True, display_name="턴당 피해량", allow_negative=True
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", True, minimum=1, display_name="반복 턴", default=1
+                ),
+                EffectParameterDefinition("target", "string", False, display_name="대상"),
+            ],
+            "지정한 턴 동안 매 턴 대상에게 피해를 줍니다.",
+        ),
+        EffectDefinition(
+            "gain_defense_each_turn",
+            "매 턴 방어 획득",
+            [
+                EffectParameterDefinition(
+                    "amount", "number", True, display_name="턴당 방어량", allow_negative=True
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", True, minimum=1, display_name="반복 턴", default=1
+                ),
+            ],
+            "지정한 턴 동안 매 턴 방어를 획득합니다.",
+        ),
+        EffectDefinition(
+            "heal_each_turn",
+            "매 턴 회복",
+            [
+                EffectParameterDefinition(
+                    "amount", "number", True, display_name="턴당 회복량", allow_negative=True
+                ),
+                EffectParameterDefinition(
+                    "duration", "integer", True, minimum=1, display_name="반복 턴", default=1
+                ),
+            ],
+            "지정한 턴 동안 매 턴 체력을 회복합니다.",
+        ),
+        EffectDefinition(
+            "apply_status_each_turn",
+            "매 턴 상태이상 부여",
+            [
+                EffectParameterDefinition(
+                    "status_name", "string", True, display_name="상태명(한글 설명)"
+                ),
+                EffectParameterDefinition(
+                    "status_id", "identifier", True, display_name="상태 ID(영문 JSON 값)"
+                ),
+                EffectParameterDefinition(
+                    "stacks", "integer", False, minimum=1, display_name="매 턴 중첩 수"
+                ),
+                EffectParameterDefinition(
+                    "repeat_turns", "integer", True, minimum=1, display_name="반복 턴", default=1
+                ),
+                EffectParameterDefinition(
+                    "status_duration", "integer", False, minimum=1, display_name="상태 지속 턴"
+                ),
+                EffectParameterDefinition("target", "string", False, display_name="대상"),
+            ],
+            "지정한 턴 동안 매 턴 대상에게 상태이상을 부여합니다.",
         ),
     ]
 

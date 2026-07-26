@@ -1,0 +1,29 @@
+{
+  "config_version": "1.0.0",
+  "effect_definitions": [
+    {
+      "id": "custom_damage_each_turn",
+      "display_name": "사용자 매 턴 피해",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "턴당 피해량",
+          "description": "매 턴 적용할 피해 수치입니다.",
+          "default": 0,
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "지속 턴",
+          "default": 1
+        }
+      ],
+      "description": "지정한 턴 동안 매 턴 피해를 적용하는 사용자 정의 효과입니다."
+    }
+  ]
+}

@@ -113,30 +113,10 @@ def project_from_dict(data: dict[str, Any]) -> Project:
         )
         for item in data.get("block_types", [])
     ]
-    effect_definitions = []
-    for item in data.get("effect_definitions", []):
-        parameters = [
-            EffectParameterDefinition(
-                key=parameter.get("key", ""),
-                value_type=parameter.get("value_type", "string"),
-                required=parameter.get("required", False),
-                minimum=parameter.get("minimum"),
-                maximum=parameter.get("maximum"),
-                options=list(parameter.get("options", [])),
-                display_name=parameter.get("display_name", ""),
-                description=parameter.get("description", ""),
-                option_labels=dict(parameter.get("option_labels", {})),
-            )
-            for parameter in item.get("parameters", [])
-        ]
-        effect_definitions.append(
-            EffectDefinition(
-                item.get("id", ""),
-                item.get("display_name", ""),
-                parameters,
-                item.get("description", ""),
-            )
-        )
+    effect_definitions = [
+        effect_definition_from_dict(item)
+        for item in data.get("effect_definitions", [])
+    ]
     blocks = [
         Block(
             id=item.get("id", ""),
@@ -232,7 +212,44 @@ def _parameter_to_dict(parameter: EffectParameterDefinition) -> dict[str, Any]:
         result["description"] = parameter.description
     if parameter.option_labels:
         result["option_labels"] = parameter.option_labels
+    if parameter.default is not None:
+        result["default"] = parameter.default
+    if parameter.allow_negative:
+        result["allow_negative"] = True
     return result
+
+
+def effect_definition_from_dict(data: dict[str, Any]) -> EffectDefinition:
+    return EffectDefinition(
+        data.get("id", ""),
+        data.get("display_name", ""),
+        [
+            EffectParameterDefinition(
+                key=parameter.get("key", ""),
+                value_type=parameter.get("value_type", "string"),
+                required=parameter.get("required", False),
+                minimum=parameter.get("minimum"),
+                maximum=parameter.get("maximum"),
+                options=list(parameter.get("options", [])),
+                display_name=parameter.get("display_name", ""),
+                description=parameter.get("description", ""),
+                option_labels=dict(parameter.get("option_labels", {})),
+                default=parameter.get("default"),
+                allow_negative=parameter.get("allow_negative", False),
+            )
+            for parameter in data.get("parameters", [])
+        ],
+        data.get("description", ""),
+    )
+
+
+def effect_definition_to_dict(definition: EffectDefinition) -> dict[str, Any]:
+    return {
+        "id": definition.id,
+        "display_name": definition.display_name,
+        "parameters": [_parameter_to_dict(item) for item in definition.parameters],
+        "description": definition.description,
+    }
 
 
 def project_to_dict(project: Project) -> dict[str, Any]:
@@ -252,13 +269,7 @@ def project_to_dict(project: Project) -> dict[str, Any]:
             for item in project.block_types
         ],
         "effect_definitions": [
-            {
-                "id": item.id,
-                "display_name": item.display_name,
-                "parameters": [_parameter_to_dict(p) for p in item.parameters],
-                "description": item.description,
-            }
-            for item in project.effect_definitions
+            effect_definition_to_dict(item) for item in project.effect_definitions
         ],
         "blocks": [
             {

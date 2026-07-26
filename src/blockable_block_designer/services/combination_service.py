@@ -30,6 +30,7 @@ def move_instance(
     instance_id: str,
     origin: Cell,
     blocks: Mapping[str, Block],
+    allow_overlap: bool = False,
 ) -> bool:
     instance = next(
         (item for item in combination.instances if item.instance_id == instance_id), None
@@ -44,7 +45,7 @@ def move_instance(
         instance.mirrored,
         instance.match,
     )
-    if not can_place(combination, candidate, blocks, instance_id):
+    if not allow_overlap and not can_place(combination, candidate, blocks, instance_id):
         return False
     instance.origin = origin
     return True
