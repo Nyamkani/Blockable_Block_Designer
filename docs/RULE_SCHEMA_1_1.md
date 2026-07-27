@@ -1,7 +1,27 @@
-# Blockable 규칙 JSON 1.1 추가 계약
+# Blockable 규칙 JSON 1.1 및 1.2 추가 계약
 
 이 문서는 `schema_version: "1.1.0"`에서 추가된 조건 슬롯과 시너지 필드를
 설명합니다. 기존 필드는 `BLOCKABLE_BLOCK_DESIGNER_PLAN.md`를 따릅니다.
+
+## 1.2 전투 효과 표준
+
+`schema_version: "1.2.0"`은 최상위 `status_definitions`와 조건부 필수 효과
+파라미터 메타데이터인 `required_when`을 추가합니다. 효과 ID, 상태 ID, 대상,
+범위 및 마이그레이션 규칙은
+`BLOCKABLE_COMBAT_EFFECT_STANDARD.md`를 단일 기준으로 사용합니다.
+
+프로그램은 1.0/1.1 파일을 열 때 다음 대표 변환을 수행하고, 다음 저장 때
+1.2.0으로 기록합니다.
+
+- `apply_buff` → `apply_status`
+- `buff_id` → `status_id`, `amount` → `stacks`
+- `gain_defense` → `gain_block`, `gain_block.count` → `amount`
+- `target: player` → `enemy`
+- `target: all_enemies` → `target: enemy`, `range: all`
+- 이전 상태 별칭(`bleed`, `weak`, `injury`, `injry`, `doubleAttack`) → 표준 상태 ID
+
+표준 효과 정의는 프로그램에서 수정·삭제할 수 없습니다. 사용자 정의 효과와
+사용자 정의 상태는 별도로 추가할 수 있습니다.
 
 ## 조건 슬롯
 

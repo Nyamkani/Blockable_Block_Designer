@@ -17,6 +17,7 @@ from ..domain.models import (
     Project,
     RuleCondition,
     SlotMatch,
+    StatusDefinition,
 )
 
 KNOWN_TOP_LEVEL = {
@@ -25,6 +26,7 @@ KNOWN_TOP_LEVEL = {
     "colors",
     "block_types",
     "effect_definitions",
+    "status_definitions",
     "blocks",
     "combinations",
     "color_synergies",
@@ -117,6 +119,16 @@ def project_from_dict(data: dict[str, Any]) -> Project:
         effect_definition_from_dict(item)
         for item in data.get("effect_definitions", [])
     ]
+    status_definitions = [
+        StatusDefinition(
+            item.get("id", ""),
+            item.get("display_name", ""),
+            item.get("category", "negative"),
+            item.get("description", ""),
+            list(item.get("aliases", [])),
+        )
+        for item in data.get("status_definitions", [])
+    ]
     blocks = [
         Block(
             id=item.get("id", ""),
@@ -187,6 +199,7 @@ def project_from_dict(data: dict[str, Any]) -> Project:
         colors=colors,
         block_types=block_types,
         effect_definitions=effect_definitions,
+        status_definitions=status_definitions,
         blocks=blocks,
         combinations=combinations,
         color_synergies=color_synergies,
@@ -216,6 +229,8 @@ def _parameter_to_dict(parameter: EffectParameterDefinition) -> dict[str, Any]:
         result["default"] = parameter.default
     if parameter.allow_negative:
         result["allow_negative"] = True
+    if parameter.required_when:
+        result["required_when"] = parameter.required_when
     return result
 
 
@@ -236,6 +251,7 @@ def effect_definition_from_dict(data: dict[str, Any]) -> EffectDefinition:
                 option_labels=dict(parameter.get("option_labels", {})),
                 default=parameter.get("default"),
                 allow_negative=parameter.get("allow_negative", False),
+                required_when=dict(parameter.get("required_when", {})),
             )
             for parameter in data.get("parameters", [])
         ],
@@ -334,5 +350,16 @@ def project_to_dict(project: Project) -> dict[str, Any]:
             for item in project.color_synergies
         ],
     }
+    if project.status_definitions:
+        result["status_definitions"] = [
+            {
+                "id": item.id,
+                "display_name": item.display_name,
+                "category": item.category,
+                "description": item.description,
+                "aliases": item.aliases,
+            }
+            for item in project.status_definitions
+        ]
     result.update(project.extra)
     return result

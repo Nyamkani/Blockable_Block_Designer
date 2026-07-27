@@ -3,7 +3,10 @@
   "metadata": {
     "project_name": "Blockable",
     "ruleset_name": "prototype",
-    "updated_at": "2026-07-24T00:00:00+09:00"
+    "updated_at": "2026-07-27T01:21:51+09:00",
+    "validation_status": "valid",
+    "validation_error_count": 0,
+    "validation_warning_count": 0
   },
   "colors": [
     {
@@ -29,10 +32,345 @@
           "value_type": "number",
           "required": true,
           "minimum": 0,
+          "display_name": "값(피해량)",
+          "allow_negative": true
+        },
+        {
+          "key": "target",
+          "value_type": "enum",
+          "required": false,
+          "options": [
+            "enemy",
+            "all_enemies"
+          ],
+          "display_name": "대상",
+          "option_labels": {
+            "enemy": "적 1명",
+            "all_enemies": "모든 적"
+          }
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "gain_block",
+      "display_name": "블록 획득",
+      "parameters": [
+        {
+          "key": "count",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "값(개수)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "heal",
+      "display_name": "회복",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "값(회복량)",
           "allow_negative": true
         }
       ],
       "description": ""
+    },
+    {
+      "id": "gain_defense",
+      "display_name": "방어 획득",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "값(방어량)",
+          "allow_negative": true
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "apply_status",
+      "display_name": "상태·디버프 적용",
+      "parameters": [
+        {
+          "key": "status_name",
+          "value_type": "string",
+          "required": true,
+          "display_name": "상태명(한글 설명)"
+        },
+        {
+          "key": "status_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "상태 ID(영문 JSON 값)"
+        },
+        {
+          "key": "stacks",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "값(중첩 수)"
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "지속 턴"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "apply_buff",
+      "display_name": "버프 적용",
+      "parameters": [
+        {
+          "key": "buff_name",
+          "value_type": "string",
+          "required": true,
+          "display_name": "버프명(한글 설명)"
+        },
+        {
+          "key": "buff_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "버프 ID(영문 JSON 값)"
+        },
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": false,
+          "display_name": "값(버프 수치)",
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "지속 턴"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "draw_block",
+      "display_name": "블록 뽑기",
+      "parameters": [
+        {
+          "key": "count",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "값(개수)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "gain_gold",
+      "display_name": "골드 획득",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "integer",
+          "required": true,
+          "display_name": "값(골드)",
+          "allow_negative": true
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "modify_next_effect",
+      "display_name": "다음 효과 변경",
+      "parameters": [
+        {
+          "key": "multiplier",
+          "value_type": "number",
+          "required": true,
+          "minimum": 0,
+          "display_name": "값(배율)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "gain_extra_turn",
+      "display_name": "추가 턴 진행",
+      "parameters": [
+        {
+          "key": "turns",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "추가 턴 수",
+          "default": 1
+        }
+      ],
+      "description": "현재 행동 뒤에 지정한 수만큼 추가 턴을 진행합니다."
+    },
+    {
+      "id": "repeat_each_turn",
+      "display_name": "매 턴 효과 반복",
+      "parameters": [
+        {
+          "key": "effect_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "반복 효과 ID",
+          "description": "매 턴 실행할 별도 효과의 영문 ID입니다."
+        },
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": false,
+          "display_name": "매 턴 값",
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "지속 턴",
+          "default": 1
+        },
+        {
+          "key": "target",
+          "value_type": "string",
+          "required": false,
+          "display_name": "대상",
+          "description": "게임에서 해석할 대상 ID입니다."
+        }
+      ],
+      "description": "지정한 효과를 일정 턴 동안 매 턴 실행합니다."
+    },
+    {
+      "id": "deal_damage_each_turn",
+      "display_name": "매 턴 공격",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "턴당 피해량",
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "반복 턴",
+          "default": 1
+        },
+        {
+          "key": "target",
+          "value_type": "string",
+          "required": false,
+          "display_name": "대상"
+        }
+      ],
+      "description": "지정한 턴 동안 매 턴 대상에게 피해를 줍니다."
+    },
+    {
+      "id": "gain_defense_each_turn",
+      "display_name": "매 턴 방어 획득",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "턴당 방어량",
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "반복 턴",
+          "default": 1
+        }
+      ],
+      "description": "지정한 턴 동안 매 턴 방어를 획득합니다."
+    },
+    {
+      "id": "heal_each_turn",
+      "display_name": "매 턴 회복",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "display_name": "턴당 회복량",
+          "allow_negative": true
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "반복 턴",
+          "default": 1
+        }
+      ],
+      "description": "지정한 턴 동안 매 턴 체력을 회복합니다."
+    },
+    {
+      "id": "apply_status_each_turn",
+      "display_name": "매 턴 상태이상 부여",
+      "parameters": [
+        {
+          "key": "status_name",
+          "value_type": "string",
+          "required": true,
+          "display_name": "상태명(한글 설명)"
+        },
+        {
+          "key": "status_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "상태 ID(영문 JSON 값)"
+        },
+        {
+          "key": "stacks",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "매 턴 중첩 수"
+        },
+        {
+          "key": "repeat_turns",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "반복 턴",
+          "default": 1
+        },
+        {
+          "key": "status_duration",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "상태 지속 턴"
+        },
+        {
+          "key": "target",
+          "value_type": "string",
+          "required": false,
+          "display_name": "대상"
+        }
+      ],
+      "description": "지정한 턴 동안 매 턴 대상에게 상태이상을 부여합니다."
     }
   ],
   "blocks": [
@@ -93,8 +431,8 @@
           "instance_id": "piece_2",
           "block_id": "red_domino",
           "origin": {
-            "x": 0,
-            "y": 1
+            "x": 1,
+            "y": 2
           },
           "rotation": 0,
           "mirrored": false,

@@ -10,63 +10,15 @@ from ..domain.models import (
     SCHEMA_VERSION,
     SUPPORTED_SCHEMA_VERSIONS,
     Project,
-    default_effect_definitions,
 )
 from ..domain.transforms import normalize_cells, normalize_instances
 from ..domain.validation import ValidationIssue, validate_project
 from .json_codec import project_from_dict, project_to_dict
+from ..services.effect_migration import migrate_effect_standard
 
 
 class ProjectFileError(Exception):
     pass
-
-
-def _upgrade_builtin_effect_definitions(project: Project) -> None:
-    defaults = {item.id: item for item in default_effect_definitions()}
-    existing = {item.id: item for item in project.effect_definitions}
-    used_effect_ids = {
-        effect.effect_id
-        for block in project.blocks
-        for effect in block.effects
-    }
-    used_effect_ids.update(
-        effect.effect_id
-        for combination in project.combinations
-        for effect in combination.effects
-    )
-    used_effect_ids.update(
-        effect.effect_id
-        for combination in project.combinations
-        for rule in combination.conditional_effects
-        for effect in rule.effects
-    )
-    used_effect_ids.update(
-        effect.effect_id
-        for synergy in project.color_synergies
-        for effect in synergy.effects
-    )
-    for effect_id, default in defaults.items():
-        current = existing.get(effect_id)
-        if current is None:
-            project.effect_definitions.append(default)
-            continue
-        parameters = {item.key: item for item in current.parameters}
-        for default_parameter in default.parameters:
-            parameter = parameters.get(default_parameter.key)
-            if parameter is None:
-                if not default_parameter.required or effect_id not in used_effect_ids:
-                    current.parameters.append(default_parameter)
-                continue
-            if not parameter.display_name:
-                parameter.display_name = default_parameter.display_name
-            if not parameter.description:
-                parameter.description = default_parameter.description
-            if not parameter.option_labels:
-                parameter.option_labels = dict(default_parameter.option_labels)
-            if default_parameter.default is not None and parameter.default is None:
-                parameter.default = default_parameter.default
-            if default_parameter.allow_negative:
-                parameter.allow_negative = True
 
 
 def load_project(path: str | Path, strict: bool = False) -> Project:
@@ -81,18 +33,19 @@ def load_project(path: str | Path, strict: bool = False) -> Project:
             f"지원하지 않는 schema_version입니다: {project.schema_version!r} "
             f"(지원: {', '.join(sorted(SUPPORTED_SCHEMA_VERSIONS))})"
         )
+    migrate_effect_standard(project)
+    project.schema_version = SCHEMA_VERSION
     errors = [item for item in validate_project(project) if item.severity == "error"]
     if errors and strict:
         summary = "\n".join(f"- {item.location}: {item.message}" for item in errors[:10])
         raise ProjectFileError(f"프로젝트 검증에 실패했습니다.\n{summary}")
     # 1.0 projects map naturally to exact-block slots and no synergy rules.
-    project.schema_version = SCHEMA_VERSION
-    _upgrade_builtin_effect_definitions(project)
     return project
 
 
 def prepare_for_save(project: Project) -> None:
     project.schema_version = SCHEMA_VERSION
+    migrate_effect_standard(project)
     blocks = {item.id: item for item in project.blocks}
     for block in project.blocks:
         block.cells = normalize_cells(block.cells)

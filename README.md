@@ -1,6 +1,6 @@
 # Blockable Block Designer
 
-현재 버전: `v1.2.2`
+현재 버전: `v1.2.3`
 
 Blockable 웹 게임에서 사용할 블록과 조합 규칙을 시각적으로 만들고 JSON으로
 저장하는 Python 데스크톱 디자인 도구입니다.
@@ -58,7 +58,8 @@ python -m blockable_block_designer
 PYTHONPATH=src python -m pytest
 ```
 
-규칙 파일은 UTF-8 JSON이며 기본 파일명은 `blockable_block_design.json`입니다. 예제는
+규칙 파일은 UTF-8 JSON이며 기본 파일명은 `blockable_block_design.json`입니다.
+현재 최신 디자인은 `examples/blockable_block_design.json`, 최소 스키마 예제는
 `examples/blockable_rules.example.json`에서 확인할 수 있습니다.
 
 ## 문서
@@ -66,6 +67,7 @@ PYTHONPATH=src python -m pytest
 - 기획 및 개발 기준: `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`
 - 사용자 설명서: `docs/USER_MANUAL.md`
 - JSON 1.1 추가 계약: `docs/RULE_SCHEMA_1_1.md`
+- 공통 전투 효과·상태 표준: `docs/BLOCKABLE_COMBAT_EFFECT_STANDARD.md`
 - 업데이트 내역: `update.txt`
-- Codex 작업 지침: `docs/Blockable_Block_Design_Codex_Interaction_Instruction.md`
+- Codex 작업 지침: `docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md`
 - 효과 설정 예제: `examples/blockable_effect_config.example.json`

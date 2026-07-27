@@ -25,7 +25,12 @@ def valid_project() -> Project:
             "normal",
             "red",
             [Cell(0, 0)],
-            effects=[Effect("deal_damage", parameters={"amount": 1})],
+            effects=[
+                Effect(
+                    "deal_damage",
+                    parameters={"target": "enemy", "range": "single", "amount": 1},
+                )
+            ],
         )
     ]
     project.combinations = [
@@ -93,10 +98,10 @@ def test_effect_parameter_is_checked() -> None:
     assert "parameter 'amount' 자료형이 다릅니다." in errors(project)
 
 
-def test_damage_amount_allows_negative_adjustment() -> None:
+def test_standard_damage_amount_rejects_negative_adjustment() -> None:
     project = valid_project()
-    project.blocks[0].effects[0].parameters = {"amount": -5}
-    assert errors(project) == []
+    project.blocks[0].effects[0].parameters["amount"] = -5
+    assert "'amount'가 최소값보다 작습니다." in errors(project)
 
 
 def test_invalid_ids_and_duplicate_ids_are_errors() -> None:
@@ -131,7 +136,7 @@ def test_slot_type_and_conditional_color_are_validated() -> None:
             RuleCondition(
                 "color_count", {"color_id": "missing", "count": 0}
             ),
-            [Effect("deal_damage", parameters={"amount": 2})],
+            [Effect("deal_damage", parameters={"target": "enemy", "range": "single", "amount": 2})],
         )
     ]
     messages = errors(project)
@@ -145,7 +150,7 @@ def test_same_color_synergy_may_target_one_color() -> None:
     project.combinations[0].conditional_effects = [
         ConditionalEffect(
             RuleCondition("all_same_color", {"color_id": "red"}),
-            [Effect("deal_damage", parameters={"amount": 2})],
+            [Effect("deal_damage", parameters={"target": "enemy", "range": "single", "amount": 2})],
         )
     ]
     assert errors(project) == []
@@ -153,19 +158,20 @@ def test_same_color_synergy_may_target_one_color() -> None:
     assert "조건의 색상 ID가 존재하지 않습니다." in errors(project)
 
 
-def test_buff_identifier_must_be_snake_case() -> None:
+def test_status_identifier_must_exist() -> None:
     project = valid_project()
     project.blocks[0].effects.append(
         Effect(
-            "apply_buff",
+            "apply_status",
             order=1,
             parameters={
-                "buff_name": "강철 피부",
-                "buff_id": "강철 피부",
+                "target": "self",
+                "status_id": "steel_skin",
+                "stacks": 1,
             },
         )
     )
-    assert "parameter 'buff_id' 자료형이 다릅니다." in errors(project)
+    assert "존재하지 않는 status ID입니다." in errors(project)
 
 
 def test_shape_only_slot_is_valid() -> None:

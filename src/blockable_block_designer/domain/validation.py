@@ -64,6 +64,7 @@ def _ids(items: list[Any], location: str, issues: list[ValidationIssue]) -> set[
 def _validate_effects(
     effects: list[Effect],
     definitions: dict[str, EffectDefinition],
+    status_ids: set[str],
     location: str,
     issues: list[ValidationIssue],
 ) -> None:
@@ -75,9 +76,23 @@ def _validate_effects(
                 ValidationIssue("error", effect_location, "존재하지 않는 effect ID입니다.")
             )
             continue
+        if not isinstance(effect.order, int) or isinstance(effect.order, bool) or effect.order < 0:
+            issues.append(
+                ValidationIssue("error", effect_location, "효과 적용 순서는 0 이상의 정수여야 합니다.")
+            )
         specs = {item.key: item for item in definition.parameters}
+        for unknown in sorted(set(effect.parameters) - set(specs)):
+            issues.append(
+                ValidationIssue(
+                    "error", effect_location, f"정의되지 않은 parameter '{unknown}'가 있습니다."
+                )
+            )
         for spec in specs.values():
-            if spec.required and spec.key not in effect.parameters:
+            condition_required = bool(spec.required_when) and all(
+                effect.parameters.get(key) in values
+                for key, values in spec.required_when.items()
+            )
+            if (spec.required or condition_required) and spec.key not in effect.parameters:
                 issues.append(
                     ValidationIssue(
                         "error", effect_location, f"필수 parameter '{spec.key}'가 없습니다."
@@ -115,6 +130,32 @@ def _validate_effects(
                     issues.append(
                         ValidationIssue("error", effect_location, f"'{spec.key}'가 최대값보다 큽니다.")
                     )
+        if (
+            effect.effect_id == "apply_status"
+            and effect.parameters.get("status_id") not in status_ids
+        ):
+            issues.append(
+                ValidationIssue("error", effect_location, "존재하지 않는 status ID입니다.")
+            )
+        if effect.effect_id == "deal_damage":
+            target = effect.parameters.get("target")
+            attack_range = effect.parameters.get("range")
+            distance = effect.parameters.get("distance")
+            if target == "self" and (attack_range is not None or distance is not None):
+                issues.append(
+                    ValidationIssue("error", effect_location, "자기 대상 피해에는 range/distance를 사용하지 않습니다.")
+                )
+            if attack_range in {"single", "all"} and distance is not None:
+                if attack_range == "all" or distance != 0:
+                    issues.append(
+                        ValidationIssue("error", effect_location, "single은 distance 0만, all은 생략만 허용합니다.")
+                    )
+            if attack_range in {"left", "right", "both"} and (
+                not isinstance(distance, int) or isinstance(distance, bool) or distance < 1
+            ):
+                issues.append(
+                    ValidationIssue("error", effect_location, "방향 범위의 distance는 1 이상이어야 합니다.")
+                )
 
 
 def _validate_condition(
@@ -154,6 +195,7 @@ def validate_project(project: Project) -> list[ValidationIssue]:
     color_ids = _ids(project.colors, "colors", issues)
     type_ids = _ids(project.block_types, "block_types", issues)
     effect_ids = _ids(project.effect_definitions, "effect_definitions", issues)
+    status_ids = _ids(project.status_definitions, "status_definitions", issues)
     block_ids = _ids(project.blocks, "blocks", issues)
     _ids(project.combinations, "combinations", issues)
     _ids(project.color_synergies, "color_synergies", issues)
@@ -174,6 +216,14 @@ def validate_project(project: Project) -> list[ValidationIssue]:
         parameter_keys = [parameter.key for parameter in definition.parameters]
         if len(parameter_keys) != len(set(parameter_keys)):
             issues.append(ValidationIssue("error", location, "효과 입력값 키가 중복되었습니다."))
+    for status in project.status_definitions:
+        location = f"status_definitions:{status.id}"
+        if status.id and not SNAKE_CASE_PATTERN.fullmatch(status.id):
+            issues.append(
+                ValidationIssue("error", location, "상태 ID는 영문 소문자 snake_case여야 합니다.")
+            )
+        if status.category not in {"debuff", "buff", "crowd_control", "custom"}:
+            issues.append(ValidationIssue("error", location, "지원하지 않는 상태 분류입니다."))
     used_types: set[str] = set()
     used_colors: set[str] = set()
     used_blocks: set[str] = set()
@@ -210,7 +260,7 @@ def validate_project(project: Project) -> list[ValidationIssue]:
         signature_seen.add(signature)
         if not block.effects:
             issues.append(ValidationIssue("warning", location, "블록 자체 효과가 없습니다."))
-        _validate_effects(block.effects, definitions, location, issues)
+        _validate_effects(block.effects, definitions, status_ids, location, issues)
 
     blocks = {item.id: item for item in project.blocks}
     for combination in project.combinations:
@@ -263,7 +313,7 @@ def validate_project(project: Project) -> list[ValidationIssue]:
             height = max(c.y for c in claimed) - min(c.y for c in claimed) + 1
             if width > 3 or height > 3:
                 issues.append(ValidationIssue("warning", location, "최소 3×3 거푸집보다 큽니다."))
-        _validate_effects(combination.effects, definitions, location, issues)
+        _validate_effects(combination.effects, definitions, status_ids, location, issues)
         for index, conditional in enumerate(combination.conditional_effects):
             conditional_location = f"{location}.conditional_effects[{index}]"
             _validate_condition(
@@ -274,7 +324,7 @@ def validate_project(project: Project) -> list[ValidationIssue]:
                     ValidationIssue("error", conditional_location, "조건부 효과가 비어 있습니다.")
                 )
             _validate_effects(
-                conditional.effects, definitions, conditional_location, issues
+                conditional.effects, definitions, status_ids, conditional_location, issues
             )
 
     for synergy in project.color_synergies:
@@ -282,7 +332,7 @@ def validate_project(project: Project) -> list[ValidationIssue]:
         _validate_condition(synergy.condition, color_ids, location, issues)
         if not synergy.effects:
             issues.append(ValidationIssue("error", location, "시너지 효과가 비어 있습니다."))
-        _validate_effects(synergy.effects, definitions, location, issues)
+        _validate_effects(synergy.effects, definitions, status_ids, location, issues)
 
     for item_id in sorted(type_ids - used_types):
         issues.append(ValidationIssue("warning", f"block_types:{item_id}", "사용되지 않는 type입니다."))

@@ -59,23 +59,98 @@ def test_version_1_project_is_migrated_to_exact_slots(tmp_path: Path) -> None:
     path = tmp_path / "legacy.json"
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     project = load_project(path)
-    assert project.schema_version == "1.1.0"
+    assert project.schema_version == "1.2.0"
     assert project.combinations[0].instances[0].match.kind == "exact_block"
 
 
-def test_loading_enriches_builtin_effect_input_metadata() -> None:
+def test_loading_migrates_to_combat_effect_standard() -> None:
     project = load_project(EXAMPLE)
     definitions = {item.id: item for item in project.effect_definitions}
-    assert "apply_buff" in definitions
+    assert "apply_buff" not in definitions
+    assert "apply_status" in definitions
     damage_parameters = {
         item.key: item for item in definitions["deal_damage"].parameters
     }
-    assert damage_parameters["amount"].display_name == "값(피해량)"
-    buff_parameters = {
-        item.key: item for item in definitions["apply_buff"].parameters
+    assert damage_parameters["amount"].display_name == "피해량"
+    assert damage_parameters["range"].required_when == {"target": ["enemy"]}
+    assert {item.id for item in project.status_definitions} >= {
+        "bleeding", "burn", "weakness", "wound", "stun", "double_attack"
     }
-    assert buff_parameters["buff_name"].display_name == "버프명(한글 설명)"
-    assert buff_parameters["buff_id"].value_type == "identifier"
+
+
+def test_legacy_effect_ids_and_parameters_are_migrated(tmp_path: Path) -> None:
+    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data["blocks"][0]["effects"] = [
+        {
+            "effect_id": "apply_buff",
+            "order": 0,
+            "parameters": {"buff_id": "doubleAttack", "amount": 2, "buff_name": "연속 공격"},
+        },
+        {
+            "effect_id": "gain_defense",
+            "order": 1,
+            "parameters": {"amount": 7},
+        },
+    ]
+    path = tmp_path / "legacy-effects.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    project = load_project(path)
+    first, second = project.blocks[0].effects
+    assert first.effect_id == "apply_status"
+    assert first.parameters == {
+        "status_id": "double_attack", "stacks": 2, "target": "self"
+    }
+    assert second.effect_id == "gain_block"
+    assert second.parameters == {"amount": 7, "target": "self"}
+
+
+def test_equivalent_custom_effect_is_merged_into_standard(tmp_path: Path) -> None:
+    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data["effect_definitions"].append(
+        {
+            "id": "my_damage",
+            "display_name": "피해",
+            "parameters": [
+                {"key": "damage", "value_type": "number", "required": True}
+            ],
+            "description": "표준 피해와 같은 사용자 정의 효과",
+        }
+    )
+    data["blocks"][0]["effects"] = [
+        {
+            "effect_id": "my_damage",
+            "order": 0,
+            "parameters": {"damage": 9},
+        }
+    ]
+    path = tmp_path / "equivalent-custom.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    project = load_project(path)
+    effect = project.blocks[0].effects[0]
+    assert effect.effect_id == "deal_damage"
+    assert effect.parameters == {
+        "amount": 9, "target": "enemy", "range": "single"
+    }
+    assert "my_damage" not in {item.id for item in project.effect_definitions}
+
+
+def test_extended_custom_effect_is_not_merged(tmp_path: Path) -> None:
+    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data["effect_definitions"].append(
+        {
+            "id": "damage_each_turn",
+            "display_name": "매 턴 피해",
+            "parameters": [
+                {"key": "amount", "value_type": "number", "required": True},
+                {"key": "duration", "value_type": "integer", "required": True},
+            ],
+            "description": "표준 피해보다 확장된 사용자 정의 효과",
+        }
+    )
+    path = tmp_path / "extended-custom.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    project = load_project(path)
+    assert "damage_each_turn" in {item.id for item in project.effect_definitions}
 
 
 def test_invalid_draft_can_be_saved_and_reopened(tmp_path: Path) -> None:

@@ -1,0 +1,4086 @@
+{
+  "schema_version": "1.1.0",
+  "metadata": {
+    "project_name": "Blockable",
+    "ruleset_name": "prototype",
+    "updated_at": "2026-07-26T20:41:34+09:00",
+    "validation_status": "valid",
+    "validation_error_count": 0,
+    "validation_warning_count": 66
+  },
+  "colors": [
+    {
+      "id": "fire",
+      "display_name": "불",
+      "hex": "#E53935"
+    },
+    {
+      "id": "legendary",
+      "display_name": "전설",
+      "hex": "#FB8C00"
+    },
+    {
+      "id": "nature",
+      "display_name": "자연",
+      "hex": "#43A047"
+    },
+    {
+      "id": "water",
+      "display_name": "물",
+      "hex": "#1E88E5"
+    },
+    {
+      "id": "steel",
+      "display_name": "강철",
+      "hex": "#616161"
+    },
+    {
+      "id": "special",
+      "display_name": "시작 특수 블록",
+      "hex": "#33DEC7"
+    },
+    {
+      "id": "curse",
+      "display_name": "저주",
+      "hex": "#674ea7"
+    }
+  ],
+  "block_types": [
+    {
+      "id": "fire",
+      "display_name": "불",
+      "description": "공격"
+    },
+    {
+      "id": "water",
+      "display_name": "물",
+      "description": "방어"
+    },
+    {
+      "id": "nature",
+      "display_name": "자연",
+      "description": "회복"
+    },
+    {
+      "id": "special",
+      "display_name": "특수",
+      "description": "시작 블럭"
+    },
+    {
+      "id": "legend",
+      "display_name": "전설",
+      "description": "전설 고유"
+    },
+    {
+      "id": "steel",
+      "display_name": "강철",
+      "description": "기본 블럭"
+    },
+    {
+      "id": "curse",
+      "display_name": "저주",
+      "description": "저주 블록"
+    }
+  ],
+  "effect_definitions": [
+    {
+      "id": "deal_damage",
+      "display_name": "피해",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "minimum": 0,
+          "display_name": "값(피해량)"
+        },
+        {
+          "key": "target",
+          "value_type": "enum",
+          "required": false,
+          "options": [
+            "enemy",
+            "all_enemies"
+          ],
+          "display_name": "대상",
+          "option_labels": {
+            "enemy": "적 1명",
+            "all_enemies": "모든 적"
+          }
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "gain_block",
+      "display_name": "블록 획득",
+      "parameters": [
+        {
+          "key": "count",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "값(개수)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "heal",
+      "display_name": "회복",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": true,
+          "minimum": 0,
+          "display_name": "값(회복량)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "apply_status",
+      "display_name": "상태·디버프 적용",
+      "parameters": [
+        {
+          "key": "status_name",
+          "value_type": "string",
+          "required": true,
+          "display_name": "상태명(한글 설명)"
+        },
+        {
+          "key": "status_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "상태 ID(영문 JSON 값)"
+        },
+        {
+          "key": "stacks",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "값(중첩 수)"
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "지속 턴"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "apply_buff",
+      "display_name": "버프 적용",
+      "parameters": [
+        {
+          "key": "buff_name",
+          "value_type": "string",
+          "required": true,
+          "display_name": "버프명(한글 설명)"
+        },
+        {
+          "key": "buff_id",
+          "value_type": "identifier",
+          "required": true,
+          "display_name": "버프 ID(영문 JSON 값)"
+        },
+        {
+          "key": "amount",
+          "value_type": "number",
+          "required": false,
+          "display_name": "값(버프 수치)"
+        },
+        {
+          "key": "duration",
+          "value_type": "integer",
+          "required": false,
+          "minimum": 1,
+          "display_name": "지속 턴"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "draw_block",
+      "display_name": "블록 뽑기",
+      "parameters": [
+        {
+          "key": "count",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 1,
+          "display_name": "값(개수)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "gain_gold",
+      "display_name": "골드 획득",
+      "parameters": [
+        {
+          "key": "amount",
+          "value_type": "integer",
+          "required": true,
+          "minimum": 0,
+          "display_name": "값(골드)"
+        }
+      ],
+      "description": ""
+    },
+    {
+      "id": "modify_next_effect",
+      "display_name": "다음 효과 변경",
+      "parameters": [
+        {
+          "key": "multiplier",
+          "value_type": "number",
+          "required": true,
+          "minimum": 0,
+          "display_name": "값(배율)"
+        }
+      ],
+      "description": ""
+    }
+  ],
+  "blocks": [
+    {
+      "id": "a001",
+      "display_name": "특수_01",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "s001",
+      "display_name": "강철_I",
+      "type_id": "steel",
+      "color_id": "steel",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          },
+          "description": "단일 10 데미지"
+        }
+      ],
+      "tags": [
+        "#강철"
+      ],
+      "description": "강철 I 블록"
+    },
+    {
+      "id": "s002",
+      "display_name": "강철_L",
+      "type_id": "steel",
+      "color_id": "steel",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          },
+          "description": "단일 10 데미지"
+        }
+      ],
+      "tags": [
+        "#강철"
+      ],
+      "description": "강철 L 블록"
+    },
+    {
+      "id": "s003",
+      "display_name": "강철_O",
+      "type_id": "steel",
+      "color_id": "steel",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          },
+          "description": "단일 10 데미지"
+        }
+      ],
+      "tags": [
+        "#강철"
+      ],
+      "description": "강철 O 블록"
+    },
+    {
+      "id": "f001",
+      "display_name": "불_I",
+      "type_id": "fire",
+      "color_id": "fire",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15
+          },
+          "description": "단일 15 데미지"
+        }
+      ],
+      "tags": [
+        "#불"
+      ],
+      "description": "불 I 블록"
+    },
+    {
+      "id": "f002",
+      "display_name": "불_L",
+      "type_id": "fire",
+      "color_id": "fire",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15
+          },
+          "description": "단일 15 데미지"
+        }
+      ],
+      "tags": [
+        "#불"
+      ],
+      "description": "불 L 블록"
+    },
+    {
+      "id": "f003",
+      "display_name": "불_O",
+      "type_id": "fire",
+      "color_id": "fire",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15
+          },
+          "description": "단일 15 데미지"
+        }
+      ],
+      "tags": [
+        "#불"
+      ],
+      "description": "불 O 블록"
+    },
+    {
+      "id": "w001",
+      "display_name": "물_I",
+      "type_id": "water",
+      "color_id": "water",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          },
+          "description": "수비 획득"
+        }
+      ],
+      "tags": [
+        "#물"
+      ],
+      "description": "물 I 블록"
+    },
+    {
+      "id": "w002",
+      "display_name": "물_L",
+      "type_id": "water",
+      "color_id": "water",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          },
+          "description": "수비 획득"
+        }
+      ],
+      "tags": [
+        "#물"
+      ],
+      "description": "물 L 블록"
+    },
+    {
+      "id": "w003",
+      "display_name": "물_O",
+      "type_id": "water",
+      "color_id": "water",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          },
+          "description": "수비 획득"
+        }
+      ],
+      "tags": [
+        "#물"
+      ],
+      "description": "물 O 블록"
+    },
+    {
+      "id": "n001",
+      "display_name": "자연_I",
+      "type_id": "nature",
+      "color_id": "nature",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "heal",
+          "order": 0,
+          "parameters": {
+            "amount": 5
+          }
+        }
+      ],
+      "tags": [
+        "#자연"
+      ],
+      "description": "자연 I 블록"
+    },
+    {
+      "id": "n002",
+      "display_name": "자연_L",
+      "type_id": "nature",
+      "color_id": "nature",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "heal",
+          "order": 0,
+          "parameters": {
+            "amount": 5
+          }
+        }
+      ],
+      "tags": [
+        "#자연"
+      ],
+      "description": "자연 L 블록"
+    },
+    {
+      "id": "n003",
+      "display_name": "자연_O",
+      "type_id": "nature",
+      "color_id": "nature",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "heal",
+          "order": 0,
+          "parameters": {
+            "amount": 5
+          }
+        }
+      ],
+      "tags": [
+        "#자연"
+      ],
+      "description": "자연 O 블록"
+    },
+    {
+      "id": "l001",
+      "display_name": "전설_01",
+      "type_id": "legend",
+      "color_id": "legendary",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "draw_block",
+          "order": 0,
+          "parameters": {
+            "count": 2
+          }
+        }
+      ],
+      "tags": [
+        "#전설"
+      ],
+      "description": "전설 단일 블록"
+    },
+    {
+      "id": "l002",
+      "display_name": "전설_02",
+      "type_id": "legend",
+      "color_id": "legendary",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "draw_block",
+          "order": 0,
+          "parameters": {
+            "count": 2
+          }
+        }
+      ],
+      "tags": [
+        "#전설"
+      ],
+      "description": "전설 + 블록"
+    },
+    {
+      "id": "a002",
+      "display_name": "특수_02",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "a003",
+      "display_name": "특수_03",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "a004",
+      "display_name": "특수_04",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "a005",
+      "display_name": "특수_05",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "a006",
+      "display_name": "특수_06",
+      "type_id": "special",
+      "color_id": "special",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 2,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "tags": [
+        "#특수"
+      ],
+      "description": "특수 블럭"
+    },
+    {
+      "id": "l003",
+      "display_name": "전설_03",
+      "type_id": "legend",
+      "color_id": "legendary",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "draw_block",
+          "order": 0,
+          "parameters": {
+            "count": 2
+          }
+        }
+      ],
+      "tags": [
+        "#전설"
+      ],
+      "description": "전설 + 블록"
+    },
+    {
+      "id": "l004",
+      "display_name": "전설_04",
+      "type_id": "legend",
+      "color_id": "legendary",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": true,
+        "allow_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "draw_block",
+          "order": 0,
+          "parameters": {
+            "count": 2
+          }
+        }
+      ],
+      "tags": [
+        "#전설"
+      ],
+      "description": "전설 + 블록"
+    },
+    {
+      "id": "c001",
+      "display_name": "저주_01",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    },
+    {
+      "id": "c002",
+      "display_name": "저주_02",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 1
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    },
+    {
+      "id": "c003",
+      "display_name": "저주_03",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    },
+    {
+      "id": "c004",
+      "display_name": "저주_04",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    },
+    {
+      "id": "c005",
+      "display_name": "저주_05",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 2
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    },
+    {
+      "id": "c006",
+      "display_name": "저주_06",
+      "type_id": "curse",
+      "color_id": "curse",
+      "shape": {
+        "cells": [
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          }
+        ]
+      },
+      "transform": {
+        "allow_rotation": false,
+        "allow_mirroring": false
+      },
+      "effects": [],
+      "tags": [
+        "#저주"
+      ],
+      "description": "저주 블록"
+    }
+  ],
+  "combinations": [
+    {
+      "id": "base_33_01_steel",
+      "display_name": "의자",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "any_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "heal",
+          "order": 1,
+          "parameters": {
+            "amount": 5
+          },
+          "description": "앉아서 회복함"
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "의자 모양의 조합"
+    },
+    {
+      "id": "base_33_02_steel",
+      "display_name": "미완성 차크람",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 1,
+          "parameters": {
+            "amount": 2,
+            "target": "enemy"
+          },
+          "description": "임시로 설정한 값입니다"
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "적 실명 디버프"
+    },
+    {
+      "id": "base_33_03_steel",
+      "display_name": "미완성 폭탄",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s003",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 0,
+            "target": "all_enemies"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "적 전체 공격 효과"
+    },
+    {
+      "id": "base_33_04_steel",
+      "display_name": "미완성 방패",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s003",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "방어를 얻는 효과"
+    },
+    {
+      "id": "base_33_05_steel",
+      "display_name": "미완성 권총",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "연타 효과"
+    },
+    {
+      "id": "base_33_06_steel",
+      "display_name": "미완성 통파",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "연속 공격 효과"
+    },
+    {
+      "id": "base_33_07_steel",
+      "display_name": "미완성 도끼",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "apply_status",
+          "order": 0,
+          "parameters": {
+            "status_name": "상처",
+            "status_id": "wound",
+            "stacks": 5
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "적에게 디버프 부여"
+    },
+    {
+      "id": "base_33_08_steel",
+      "display_name": "미완성 갑옷",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "방어를 얻는 효과"
+    },
+    {
+      "id": "base_33_09_steel",
+      "display_name": "미완성 마법봉",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "draw_block",
+          "order": 0,
+          "parameters": {
+            "count": 1
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "추가 블록을 얻는 효과"
+    },
+    {
+      "id": "base_33_10_steel",
+      "display_name": "미완성 부적",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 2,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "3x3"
+      ],
+      "description": "분노를 얻는 효과"
+    },
+    {
+      "id": "base_44_01_steel",
+      "display_name": "강철 권총",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "연속 공격하는 효과"
+    },
+    {
+      "id": "base_44_02_steel",
+      "display_name": "강철 투구",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 3,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s003",
+          "origin": {
+            "x": 1,
+            "y": 2
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 20
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "방어를 얻는 효과"
+    },
+    {
+      "id": "base_44_03_steel",
+      "display_name": "강철 갑옷",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s003",
+          "origin": {
+            "x": 1,
+            "y": 2
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": false,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 20
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "방어를 얻는 효과"
+    },
+    {
+      "id": "base_44_04_steel",
+      "display_name": "강철 자마다르",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 2,
+            "y": 2
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s002",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "디버프를 부여하는 효과"
+    },
+    {
+      "id": "special_44_01_steel",
+      "display_name": "강철 손도끼",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s003",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 2,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 상처 디버프를 부여"
+    },
+    {
+      "id": "special_44_02_steel",
+      "display_name": "강철 채찍",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 2,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 약화 디버프를 부여"
+    },
+    {
+      "id": "special_44_03_steel",
+      "display_name": "강철 방패",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s001",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "any_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 30
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "방어를 얻는 효과"
+    },
+    {
+      "id": "special_44_04_steel",
+      "display_name": "강철 갑옷",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 2
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 20
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "방어를 부여하는 효과"
+    },
+    {
+      "id": "special_44_05_steel",
+      "display_name": "강철 쌍단봉",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s001",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "연속 공격하는 효과"
+    },
+    {
+      "id": "special_44_06_steel",
+      "display_name": "강철 폭탄",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s003",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "s003",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "all_enemies"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적 전체에게 데미지"
+    },
+    {
+      "id": "special_44_07_steel",
+      "display_name": "강철 핸드건",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 OO 하는 효과"
+    },
+    {
+      "id": "special_44_08_steel",
+      "display_name": "강철 화살",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a006",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 데미지를 주는 효과"
+    },
+    {
+      "id": "special_44_09_steel",
+      "display_name": "강철 터렛",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a003",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "공격을 지원해 주는 효과"
+    },
+    {
+      "id": "special_44_10_steel",
+      "display_name": "강철 정령",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a005",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "s003",
+          "origin": {
+            "x": 2,
+            "y": 2
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "heal",
+          "order": 0,
+          "parameters": {
+            "amount": 8
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "지속 회복 효과를 부여"
+    },
+    {
+      "id": "special_44_11_steel",
+      "display_name": "강철 토템",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "s001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a004",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "분노를 부여하는 효과"
+    },
+    {
+      "id": "special_44_01_fire",
+      "display_name": "화염 손도끼",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f003",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "f001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 30,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "강력한 데미지를 주는 효과"
+    },
+    {
+      "id": "special_44_02_fire",
+      "display_name": "화염 채찍",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "f001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "화상을 부여하는 효과"
+    },
+    {
+      "id": "special_44_03_fire",
+      "display_name": "화염 방패",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "f001",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 20
+          }
+        },
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "all_enemies"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "맞으면 화상을 부여하는 효과"
+    },
+    {
+      "id": "special_44_04_fire",
+      "display_name": "화염 갑옷",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f002",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 2
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "all_enemies"
+          }
+        },
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 15
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "방어와 공격을 동시에 함"
+    },
+    {
+      "id": "special_44_05_fire",
+      "display_name": "화염 쌍단봉",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "f001",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 20,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "강력한 연격을 시전"
+    },
+    {
+      "id": "special_44_06_fire",
+      "display_name": "화염 폭탄",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f003",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "f003",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15,
+            "target": "all_enemies"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적 전체에게 화염 데미지"
+    },
+    {
+      "id": "special_44_07_fire",
+      "display_name": "화염 핸드건",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 15,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "강력한 연속 사격"
+    },
+    {
+      "id": "special_44_08_fire",
+      "display_name": "화염 화살",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a006",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 화상을 부여하는 효과"
+    },
+    {
+      "id": "special_44_09_fire",
+      "display_name": "화염 터렛",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a003",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "반응형 화염 부여"
+    },
+    {
+      "id": "special_44_10_fire",
+      "display_name": "화염 정령",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a005",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "f003",
+          "origin": {
+            "x": 2,
+            "y": 2
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "매 턴 분노를 부여하는 효과"
+    },
+    {
+      "id": "special_44_11_fire",
+      "display_name": "화염 토템",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "f001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a004",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": false
+      },
+      "effects": [],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "대량의 분노를 얻는 효과"
+    },
+    {
+      "id": "special_44_01_water",
+      "display_name": "빙결 손도끼",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w003",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "w001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "enemy"
+          }
+        },
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "공격과 방어를 동시에"
+    },
+    {
+      "id": "special_44_02_water",
+      "display_name": "빙결 채찍",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 270,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a001",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "w001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        },
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "연타와 방어를 동시에"
+    },
+    {
+      "id": "special_44_03_water",
+      "display_name": "빙결 방패",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "w001",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 40
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "대량의 방어를 얻음"
+    },
+    {
+      "id": "special_44_04_water",
+      "display_name": "빙결 갑옷",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w002",
+          "origin": {
+            "x": 2,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 2
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 15
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "턴마다 방어"
+    },
+    {
+      "id": "special_44_05_water",
+      "display_name": "빙결 쌍단봉",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w001",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "w001",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "enemy"
+          }
+        },
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "연타와 방어를 동시에"
+    },
+    {
+      "id": "special_44_06_water",
+      "display_name": "빙결 폭탄",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w003",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "w003",
+          "origin": {
+            "x": 2,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10,
+            "target": "all_enemies"
+          }
+        },
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 5,
+            "target": "all_enemies"
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적 전체에게 약화 디버프"
+    },
+    {
+      "id": "special_44_07_water",
+      "display_name": "빙결 핸드건",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w001",
+          "origin": {
+            "x": 1,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_3",
+          "block_id": "a001",
+          "origin": {
+            "x": 3,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 20
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적 에게 빙결 적용"
+    },
+    {
+      "id": "special_44_08_water",
+      "display_name": "빙결 화살",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w002",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a006",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "deal_damage",
+          "order": 0,
+          "parameters": {
+            "amount": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "적에게 빙결과 약화"
+    },
+    {
+      "id": "special_44_09_water",
+      "display_name": "빙결 터렛",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a003",
+          "origin": {
+            "x": 1,
+            "y": 1
+          },
+          "rotation": 180,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 10
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "매턴 방어를 해준다"
+    },
+    {
+      "id": "special_44_10_water",
+      "display_name": "빙결 정령",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "a005",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "w003",
+          "origin": {
+            "x": 2,
+            "y": 2
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 20
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "자신에게 철갑을 부여"
+    },
+    {
+      "id": "special_44_11_water",
+      "display_name": "빙결 토템",
+      "instances": [
+        {
+          "instance_id": "piece_1",
+          "block_id": "w001",
+          "origin": {
+            "x": 0,
+            "y": 0
+          },
+          "rotation": 90,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        },
+        {
+          "instance_id": "piece_2",
+          "block_id": "a004",
+          "origin": {
+            "x": 0,
+            "y": 1
+          },
+          "rotation": 0,
+          "mirrored": false,
+          "match": {
+            "kind": "exact_block"
+          }
+        }
+      ],
+      "match_options": {
+        "allow_recipe_rotation": true,
+        "allow_recipe_mirroring": true
+      },
+      "effects": [
+        {
+          "effect_id": "gain_block",
+          "order": 0,
+          "parameters": {
+            "count": 30
+          }
+        }
+      ],
+      "conditional_effects": [],
+      "tags": [
+        "4x4"
+      ],
+      "description": "자신에게 대량의 철갑 부여"
+    }
+  ],
+  "color_synergies": []
+}

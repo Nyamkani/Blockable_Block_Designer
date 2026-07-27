@@ -17,6 +17,9 @@ from ..domain.models import (
     EffectDefinition,
     Project,
     SlotMatch,
+    StatusDefinition,
+    STANDARD_EFFECT_IDS,
+    default_status_definitions,
 )
 from ..domain.transforms import instance_cells
 from ..domain.validation import ValidationIssue, validate_project
@@ -28,6 +31,7 @@ from ..persistence.effect_config import (
 from ..persistence.project_file import ProjectFileError, load_project, save_project
 from ..services.block_service import rename_block, toggle_cell
 from ..services.combination_service import move_instance
+from ..services.effect_migration import migrate_effect_standard
 from .effect_definition_editor import EffectDefinitionDialog
 from .effect_editor import EffectList
 from .grid_canvas import GridCanvas
@@ -96,6 +100,7 @@ class MainWindow:
         self.type_tab = ttk.Frame(self.notebook, padding=10)
         self.color_tab = ttk.Frame(self.notebook, padding=10)
         self.effect_definition_tab = ttk.Frame(self.notebook, padding=10)
+        self.status_definition_tab = ttk.Frame(self.notebook, padding=10)
         self.block_tab = ttk.Frame(self.notebook, padding=10)
         self.combo_tab = ttk.Frame(self.notebook, padding=10)
         self.synergy_tab = ttk.Frame(self.notebook, padding=10)
@@ -105,6 +110,7 @@ class MainWindow:
             (self.type_tab, "Type 관리"),
             (self.color_tab, "색상 관리"),
             (self.effect_definition_tab, "효과 정의"),
+            (self.status_definition_tab, "상태 정의"),
             (self.block_tab, "블록 편집기"),
             (self.combo_tab, "조합식 편집기"),
             (self.synergy_tab, "색상 시너지"),
@@ -115,6 +121,7 @@ class MainWindow:
         self._build_simple_tab(self.type_tab, "type")
         self._build_simple_tab(self.color_tab, "color")
         self._build_effect_definition_tab()
+        self._build_status_definition_tab()
         self._build_block_tab()
         self._build_combo_tab()
         self._build_synergy_tab()
@@ -447,6 +454,36 @@ class MainWindow:
         ).pack(side="left", padx=4)
         self.effect_definition_tree.bind("<Double-1>", lambda _event: self.edit_effect_definition())
 
+    def _build_status_definition_tab(self) -> None:
+        ttk.Label(
+            self.status_definition_tab,
+            text="상태 효과 정의",
+            font=("TkDefaultFont", 12, "bold"),
+        ).pack(anchor="w")
+        ttk.Label(
+            self.status_definition_tab,
+            text="표준 상태는 고정되며, 게임에서 처리할 사용자 상태를 추가할 수 있습니다.",
+        ).pack(anchor="w", pady=(2, 8))
+        self.status_definition_tree = ttk.Treeview(
+            self.status_definition_tab,
+            columns=("id", "name", "category", "description", "aliases"),
+            show="headings",
+        )
+        for key, title, width in [
+            ("id", "상태 ID", 160), ("name", "상태명", 130),
+            ("category", "분류", 120), ("description", "설명", 430),
+            ("aliases", "이전 ID", 160),
+        ]:
+            self.status_definition_tree.heading(key, text=title)
+            self.status_definition_tree.column(key, width=width, anchor="w")
+        self.status_definition_tree.pack(fill="both", expand=True)
+        buttons = ttk.Frame(self.status_definition_tab)
+        buttons.pack(fill="x", pady=(8, 0))
+        ttk.Button(buttons, text="추가", command=self.add_status_definition).pack(side="left")
+        ttk.Button(buttons, text="수정", command=self.edit_status_definition).pack(side="left", padx=4)
+        ttk.Button(buttons, text="삭제", command=self.delete_status_definition).pack(side="left")
+        self.status_definition_tree.bind("<Double-1>", lambda _event: self.edit_status_definition())
+
     def _build_order_buttons(self, parent: ttk.Frame, kind: str) -> None:
         frame = ttk.LabelFrame(parent, text="목록 순서", padding=3)
         frame.pack(fill="x", pady=(5, 0))
@@ -514,6 +551,7 @@ class MainWindow:
         for item in self.project.combinations:
             self.combo_list.insert("end", f"{item.id} — {item.display_name}")
         self._refresh_effect_definitions()
+        self._refresh_status_definitions()
         self._refresh_synergies()
         self.block_type_combo.configure(values=[item.id for item in self.project.block_types])
         self.block_color_combo.configure(values=[item.id for item in self.project.colors])
@@ -1312,6 +1350,9 @@ class MainWindow:
         dialog = EffectDefinitionDialog(self.root)
         self.root.wait_window(dialog)
         if dialog.result:
+            if any(item.id == dialog.result.id for item in self.project.effect_definitions):
+                messagebox.showerror("추가 불가", "같은 효과 ID가 이미 존재합니다.")
+                return
             self.project.effect_definitions.append(dialog.result)
             self.mark_dirty()
             self._refresh_effect_definitions()
@@ -1321,6 +1362,9 @@ class MainWindow:
         if not selected:
             return
         index, definition = selected
+        if definition.id in STANDARD_EFFECT_IDS:
+            messagebox.showinfo("표준 효과", "표준 효과 정의는 수정할 수 없습니다.")
+            return
         dialog = EffectDefinitionDialog(self.root, definition)
         self.root.wait_window(dialog)
         if not dialog.result:
@@ -1349,6 +1393,9 @@ class MainWindow:
         if not selected:
             return
         index, definition = selected
+        if definition.id in STANDARD_EFFECT_IDS:
+            messagebox.showinfo("표준 효과", "표준 효과 정의는 삭제할 수 없습니다.")
+            return
         users = [effect for effect in self._all_effects() if effect.effect_id == definition.id]
         if users:
             messagebox.showerror("삭제 불가", f"'{definition.id}' 효과를 사용하는 항목이 {len(users)}개 있습니다.")
@@ -1385,6 +1432,8 @@ class MainWindow:
         added = 0
         replaced = 0
         for definition in imported:
+            if definition.id in STANDARD_EFFECT_IDS:
+                continue
             index = existing.get(definition.id)
             if index is None:
                 existing[definition.id] = len(self.project.effect_definitions)
@@ -1416,6 +1465,100 @@ class MainWindow:
             messagebox.showerror("내보내기 실패", str(error))
             return
         messagebox.showinfo("내보내기 완료", f"효과 정의를 저장했습니다.\n{filename}")
+
+    def _refresh_status_definitions(self) -> None:
+        if not hasattr(self, "status_definition_tree"):
+            return
+        for row in self.status_definition_tree.get_children():
+            self.status_definition_tree.delete(row)
+        for index, status in enumerate(self.project.status_definitions):
+            self.status_definition_tree.insert(
+                "", "end", iid=str(index),
+                values=(
+                    status.id,
+                    status.display_name,
+                    status.category,
+                    status.description,
+                    ", ".join(status.aliases),
+                ),
+            )
+
+    def _selected_status_definition(self) -> tuple[int, StatusDefinition] | None:
+        selection = self.status_definition_tree.selection()
+        if not selection:
+            return None
+        index = int(selection[0])
+        return index, self.project.status_definitions[index]
+
+    def add_status_definition(self) -> None:
+        values = self._simple_item_dialog(
+            "상태 추가",
+            [("상태 ID (snake_case)", ""), ("한글 이름", ""), ("분류", "custom"),
+             ("설명", ""), ("이전 ID (쉼표)", "")],
+        )
+        if not values:
+            return
+        if any(item.id == values[0] for item in self.project.status_definitions):
+            messagebox.showerror("추가 불가", "같은 상태 ID가 이미 존재합니다.")
+            return
+        self.project.status_definitions.append(
+            StatusDefinition(values[0], values[1], values[2], values[3],
+                             [item.strip() for item in values[4].split(",") if item.strip()])
+        )
+        migrate_effect_standard(self.project)
+        self.mark_dirty()
+        self.refresh_all()
+
+    def edit_status_definition(self) -> None:
+        selected = self._selected_status_definition()
+        if not selected:
+            return
+        index, status = selected
+        standard_ids = {item.id for item in default_status_definitions()}
+        if status.id in standard_ids:
+            messagebox.showinfo("표준 상태", "표준 상태 정의는 수정할 수 없습니다.")
+            return
+        values = self._simple_item_dialog(
+            "상태 수정",
+            [("상태 ID (snake_case)", status.id), ("한글 이름", status.display_name),
+             ("분류", status.category), ("설명", status.description),
+             ("이전 ID (쉼표)", ", ".join(status.aliases))],
+        )
+        if not values:
+            return
+        old_id = status.id
+        status.id, status.display_name, status.category, status.description = values[:4]
+        status.aliases = [item.strip() for item in values[4].split(",") if item.strip()]
+        if old_id != status.id:
+            for effect in self._all_effects():
+                if effect.effect_id == "apply_status" and effect.parameters.get("status_id") == old_id:
+                    effect.parameters["status_id"] = status.id
+        migrate_effect_standard(self.project)
+        self.mark_dirty()
+        self.refresh_all()
+
+    def delete_status_definition(self) -> None:
+        selected = self._selected_status_definition()
+        if not selected:
+            return
+        index, status = selected
+        standard_ids = {item.id for item in default_status_definitions()}
+        if status.id in standard_ids:
+            messagebox.showinfo("표준 상태", "표준 상태 정의는 삭제할 수 없습니다.")
+            return
+        users = [
+            effect for effect in self._all_effects()
+            if effect.effect_id == "apply_status"
+            and effect.parameters.get("status_id") == status.id
+        ]
+        if users:
+            messagebox.showerror("삭제 불가", f"이 상태를 사용하는 효과가 {len(users)}개 있습니다.")
+            return
+        if messagebox.askyesno("상태 삭제", f"'{status.display_name}'을 삭제하시겠습니까?"):
+            del self.project.status_definitions[index]
+            migrate_effect_standard(self.project)
+            self.mark_dirty()
+            self.refresh_all()
 
     def run_validation(self) -> None:
         issues = validate_project(self.project)
