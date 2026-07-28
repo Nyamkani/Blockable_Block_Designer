@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..domain.models import (
+    DATA_TYPE,
     SCHEMA_VERSION,
     SUPPORTED_SCHEMA_VERSIONS,
     Project,
@@ -14,7 +15,6 @@ from ..domain.models import (
 from ..domain.transforms import normalize_cells, normalize_instances
 from ..domain.validation import ValidationIssue, validate_project
 from .json_codec import project_from_dict, project_to_dict
-from ..services.effect_migration import migrate_effect_standard
 
 
 class ProjectFileError(Exception):
@@ -33,19 +33,20 @@ def load_project(path: str | Path, strict: bool = False) -> Project:
             f"지원하지 않는 schema_version입니다: {project.schema_version!r} "
             f"(지원: {', '.join(sorted(SUPPORTED_SCHEMA_VERSIONS))})"
         )
-    migrate_effect_standard(project)
+    if project.data_type != DATA_TYPE:
+        project.data_type = DATA_TYPE
     project.schema_version = SCHEMA_VERSION
     errors = [item for item in validate_project(project) if item.severity == "error"]
     if errors and strict:
         summary = "\n".join(f"- {item.location}: {item.message}" for item in errors[:10])
         raise ProjectFileError(f"프로젝트 검증에 실패했습니다.\n{summary}")
-    # 1.0 projects map naturally to exact-block slots and no synergy rules.
+    # Older files are normalized in json_codec and are saved as a separate 1.1 file by the UI.
     return project
 
 
 def prepare_for_save(project: Project) -> None:
     project.schema_version = SCHEMA_VERSION
-    migrate_effect_standard(project)
+    project.data_type = DATA_TYPE
     blocks = {item.id: item for item in project.blocks}
     for block in project.blocks:
         block.cells = normalize_cells(block.cells)

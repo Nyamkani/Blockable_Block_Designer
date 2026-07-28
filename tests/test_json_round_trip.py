@@ -3,13 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from blockable_block_designer.domain.models import BlockType, Combination, Project
-from blockable_block_designer.domain.models import EffectDefinition, EffectParameterDefinition
-from blockable_block_designer.persistence.json_codec import project_from_dict, project_to_dict
-from blockable_block_designer.persistence.effect_config import (
-    load_effect_config,
-    save_effect_config,
+from blockable_block_designer.domain.models import (
+    Block,
+    BlockInstance,
+    BlockType,
+    Cell,
+    Combination,
+    Effect,
+    Project,
 )
+from blockable_block_designer.persistence.json_codec import project_from_dict, project_to_dict
 from blockable_block_designer.persistence.project_file import (
     ProjectFileError,
     load_project,
@@ -17,30 +20,85 @@ from blockable_block_designer.persistence.project_file import (
 )
 
 
-EXAMPLE = Path(__file__).parents[1] / "examples" / "blockable_rules.example.json"
-EFFECT_CONFIG_EXAMPLE = (
-    Path(__file__).parents[1] / "examples" / "blockable_effect_config.example.json"
-)
+def new_project() -> Project:
+    project = Project(
+        block_types=[
+            BlockType("normal_fire", "일반 화염", grade="normal", color="fire")
+        ],
+        colors=[],
+        effect_definitions=[],
+        status_definitions=[],
+    )
+    project.blocks = [
+        Block(
+            "fire_dot",
+            "불꽃 점",
+            "normal_fire",
+            "fire",
+            [Cell(0, 0)],
+            effects=[
+                Effect(
+                    "fire_dot_damage",
+                    description="기본 피해 3",
+                    effect_name="불꽃 점 피해",
+                    target="SELECTED",
+                    value=3,
+                    type="BASE_DAMAGE",
+                )
+            ],
+            description="한 칸 화염 블록",
+        )
+    ]
+    project.combinations = [
+        Combination(
+            "fire_pair",
+            "불꽃 쌍",
+            [
+                BlockInstance("piece_01", "fire_dot", Cell(0, 0)),
+                BlockInstance("piece_02", "fire_dot", Cell(1, 0)),
+            ],
+            effects=[
+                Effect(
+                    "fire_pair_damage",
+                    description="독립 피해 5",
+                    effect_name="불꽃 쌍 피해",
+                    target="all",
+                    value=5,
+                    type="INDEPENDENT_DAMAGE",
+                )
+            ],
+            description="불꽃 점 두 개 조합",
+        )
+    ]
+    return project
 
 
-def test_example_round_trip_preserves_meaning_and_korean() -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    project = project_from_dict(data)
-    encoded = project_to_dict(project)
-    assert encoded == data
-    assert encoded["blocks"][0]["display_name"] == "붉은 2칸 블록"
-    json.dumps(encoded, ensure_ascii=False, allow_nan=False)
-
-
-def test_unknown_top_level_fields_are_preserved() -> None:
-    data = project_to_dict(Project(block_types=[BlockType("normal", "일반")]))
-    data["future_field"] = {"enabled": True}
-    restored = project_from_dict(data)
-    assert project_to_dict(restored)["future_field"] == {"enabled": True}
+def test_new_schema_round_trip_preserves_contract_and_korean() -> None:
+    encoded = project_to_dict(new_project())
+    restored = project_from_dict(encoded)
+    assert project_to_dict(restored) == encoded
+    assert set(encoded) == {
+        "schema_version", "data_type", "metadata", "blocks", "combinations"
+    }
+    assert encoded["data_type"] == "blockable_block_design"
+    assert encoded["blocks"][0]["block_name"] == "불꽃 점"
+    assert encoded["blocks"][0]["effects"][0] == {
+        "effect_id": "fire_dot_damage",
+        "effect_name": "불꽃 점 피해",
+        "description": "기본 피해 3",
+        "target": "SELECTED",
+        "type": "BASE_DAMAGE",
+        "value": 3,
+        "parameters": {
+            "id": "NONE",
+            "duration": 0,
+            "intensify": 0,
+        },
+    }
 
 
 def test_unknown_schema_version_is_rejected(tmp_path: Path) -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
+    data = project_to_dict(new_project())
     data["schema_version"] = "99.0.0"
     path = tmp_path / "future.json"
     path.write_text(json.dumps(data), encoding="utf-8")
@@ -48,178 +106,96 @@ def test_unknown_schema_version_is_rejected(tmp_path: Path) -> None:
         load_project(path)
 
 
-def test_version_1_project_is_migrated_to_exact_slots(tmp_path: Path) -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    data["schema_version"] = "1.0.0"
-    data.pop("color_synergies")
-    for combination in data["combinations"]:
-        combination.pop("conditional_effects")
-        for instance in combination["instances"]:
-            instance.pop("match")
+def test_legacy_schema_is_migrated_to_new_contract(tmp_path: Path) -> None:
+    legacy = {
+        "schema_version": "1.2.0",
+        "metadata": {"project_name": "레거시"},
+        "colors": [{"id": "fire", "display_name": "불", "hex": "#ff0000"}],
+        "block_types": [{"id": "normal_fire", "display_name": "일반 화염"}],
+        "effect_definitions": [],
+        "status_definitions": [],
+        "blocks": [
+            {
+                "id": "old_block",
+                "display_name": "이전 블록",
+                "type_id": "normal_fire",
+                "color_id": "fire",
+                "shape": {"cells": [{"x": 0, "y": 0}]},
+                "transform": {"allow_rotation": True, "allow_mirroring": False},
+                "effects": [
+                    {
+                        "effect_id": "deal_damage",
+                        "order": 0,
+                        "parameters": {"target": "enemy", "amount": 4},
+                    }
+                ],
+                "description": "이전 데이터",
+            }
+        ],
+        "combinations": [],
+        "color_synergies": [],
+    }
     path = tmp_path / "legacy.json"
-    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    project = load_project(path)
-    assert project.schema_version == "1.2.0"
-    assert project.combinations[0].instances[0].match.kind == "exact_block"
-
-
-def test_loading_migrates_to_combat_effect_standard() -> None:
-    project = load_project(EXAMPLE)
-    definitions = {item.id: item for item in project.effect_definitions}
-    assert "apply_buff" not in definitions
-    assert "apply_status" in definitions
-    damage_parameters = {
-        item.key: item for item in definitions["deal_damage"].parameters
-    }
-    assert damage_parameters["amount"].display_name == "피해량"
-    assert damage_parameters["range"].required_when == {"target": ["enemy"]}
-    assert {item.id for item in project.status_definitions} >= {
-        "bleeding", "burn", "weakness", "wound", "stun", "double_attack"
-    }
-
-
-def test_legacy_effect_ids_and_parameters_are_migrated(tmp_path: Path) -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    data["blocks"][0]["effects"] = [
-        {
-            "effect_id": "apply_buff",
-            "order": 0,
-            "parameters": {"buff_id": "doubleAttack", "amount": 2, "buff_name": "연속 공격"},
-        },
-        {
-            "effect_id": "gain_defense",
-            "order": 1,
-            "parameters": {"amount": 7},
-        },
-    ]
-    path = tmp_path / "legacy-effects.json"
-    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    project = load_project(path)
-    first, second = project.blocks[0].effects
-    assert first.effect_id == "apply_status"
-    assert first.parameters == {
-        "status_id": "double_attack", "stacks": 2, "target": "self"
-    }
-    assert second.effect_id == "gain_block"
-    assert second.parameters == {"amount": 7, "target": "self"}
-
-
-def test_equivalent_custom_effect_is_merged_into_standard(tmp_path: Path) -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    data["effect_definitions"].append(
-        {
-            "id": "my_damage",
-            "display_name": "피해",
-            "parameters": [
-                {"key": "damage", "value_type": "number", "required": True}
-            ],
-            "description": "표준 피해와 같은 사용자 정의 효과",
-        }
-    )
-    data["blocks"][0]["effects"] = [
-        {
-            "effect_id": "my_damage",
-            "order": 0,
-            "parameters": {"damage": 9},
-        }
-    ]
-    path = tmp_path / "equivalent-custom.json"
-    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    path.write_text(json.dumps(legacy, ensure_ascii=False), encoding="utf-8")
     project = load_project(path)
     effect = project.blocks[0].effects[0]
-    assert effect.effect_id == "deal_damage"
-    assert effect.parameters == {
-        "amount": 9, "target": "enemy", "range": "single"
+    assert project.schema_version == "1.1.0"
+    assert project.data_type == "blockable_block_design"
+    assert effect.type == "BASE_DAMAGE"
+    assert effect.target == "SELECTED"
+    assert effect.value == 4
+    assert effect.parameter_id == "NONE"
+    assert set(project_to_dict(project)) == {
+        "schema_version", "data_type", "metadata", "blocks", "combinations"
     }
-    assert "my_damage" not in {item.id for item in project.effect_definitions}
 
 
-def test_extended_custom_effect_is_not_merged(tmp_path: Path) -> None:
-    data = json.loads(EXAMPLE.read_text(encoding="utf-8"))
-    data["effect_definitions"].append(
-        {
-            "id": "damage_each_turn",
-            "display_name": "매 턴 피해",
-            "parameters": [
-                {"key": "amount", "value_type": "number", "required": True},
-                {"key": "duration", "value_type": "integer", "required": True},
-            ],
-            "description": "표준 피해보다 확장된 사용자 정의 효과",
-        }
-    )
-    path = tmp_path / "extended-custom.json"
-    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-    project = load_project(path)
-    assert "damage_each_turn" in {item.id for item in project.effect_definitions}
-
-
-def test_invalid_draft_can_be_saved_and_reopened(tmp_path: Path) -> None:
-    project = Project(block_types=[BlockType("normal", "일반")])
-    project.blocks = []
+def test_invalid_draft_can_be_saved(tmp_path: Path) -> None:
+    project = Project(colors=[], block_types=[], effect_definitions=[], status_definitions=[])
     project.combinations = [Combination("empty_recipe", "빈 조합")]
-    path = tmp_path / "invalid_draft.json"
-    issues = save_project(
-        project,
-        path,
-        allow_warnings=True,
-        allow_errors=True,
-    )
+    path = tmp_path / "draft.json"
+    issues = save_project(project, path, allow_warnings=True, allow_errors=True)
     assert any(item.severity == "error" for item in issues)
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["metadata"]["validation_status"] == "invalid"
-    assert data["metadata"]["validation_error_count"] >= 1
-    reopened = load_project(path)
-    assert reopened.combinations[0].id == "empty_recipe"
-    with pytest.raises(ProjectFileError, match="검증에 실패"):
-        load_project(path, strict=True)
+    assert data["data_type"] == "blockable_block_design"
 
 
-def test_custom_effect_description_and_negative_metadata_round_trip() -> None:
-    project = Project(
-        effect_definitions=[
-            EffectDefinition(
-                "damage_each_turn",
-                "매 턴 피해",
-                [
-                    EffectParameterDefinition(
-                        "amount", "number", True,
-                        display_name="턴당 피해량",
-                        description="매 턴 적용할 수치",
-                        default=0,
-                        allow_negative=True,
-                    )
-                ],
-                "지정한 턴 동안 매 턴 피해를 줍니다.",
-            )
-        ]
-    )
-    encoded = project_to_dict(project)
-    restored = project_from_dict(encoded)
-    definition = restored.effect_definitions[0]
-    assert definition.description == "지정한 턴 동안 매 턴 피해를 줍니다."
-    assert definition.parameters[0].description == "매 턴 적용할 수치"
-    assert definition.parameters[0].default == 0
-    assert definition.parameters[0].allow_negative is True
+def test_version_1_0_effect_is_upgraded_with_parameters(tmp_path: Path) -> None:
+    data = project_to_dict(new_project())
+    data["schema_version"] = "1.0.0"
+    effect = data["blocks"][0]["effects"][0]
+    effect.pop("parameters")
+    effect["type"] = "BUFF"
+    effect["target"] = "self"
+    effect["reference_id"] = "DAMAGE_BONUS"
+    path = tmp_path / "version-1.0.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    project = load_project(path)
+    migrated = project.blocks[0].effects[0]
+    assert project.schema_version == "1.1.0"
+    assert migrated.parameter_id == "DAMAGE_BONUS"
+    encoded = project_to_dict(project)["blocks"][0]["effects"][0]
+    assert "reference_id" not in encoded
+    assert encoded["parameters"] == {
+        "id": "DAMAGE_BONUS", "duration": 0, "intensify": 0
+    }
 
 
-def test_effect_config_can_be_shared_between_projects(tmp_path: Path) -> None:
-    definition = EffectDefinition(
-        "custom_damage",
-        "사용자 피해",
-        [
-            EffectParameterDefinition(
-                "amount", "number", True, display_name="피해량", allow_negative=True
-            )
-        ],
-        "공유할 사용자 정의 효과",
-    )
-    path = tmp_path / "blockable_effect_config.json"
-    save_effect_config([definition], path)
-    restored = load_effect_config(path)
-    assert restored == [definition]
+def test_version_1_0_base_hit_count_defaults_to_one_attack(tmp_path: Path) -> None:
+    data = project_to_dict(new_project())
+    data["schema_version"] = "1.0.0"
+    effect = data["blocks"][0]["effects"][0]
+    effect.pop("parameters")
+    effect["type"] = "BASE_HIT_COUNT"
+    effect["value"] = 8
+    path = tmp_path / "version-1.0-hit-count.json"
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 
+    project = load_project(path)
+    migrated = project.blocks[0].effects[0]
 
-def test_effect_config_example_is_loadable() -> None:
-    definitions = load_effect_config(EFFECT_CONFIG_EXAMPLE)
-    assert definitions[0].id == "custom_damage_each_turn"
-    assert definitions[0].description
+    assert migrated.value == 8
+    assert migrated.parameter_id == "CURRENT_ACTION"
+    assert migrated.duration == 0
+    assert migrated.intensify == 1

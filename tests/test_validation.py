@@ -6,31 +6,40 @@ from blockable_block_designer.domain.models import (
     BlockType,
     Cell,
     Combination,
-    ConditionalEffect,
     Effect,
     Project,
-    RuleCondition,
-    SlotMatch,
 )
 from blockable_block_designer.domain.validation import validate_project
 from blockable_block_designer.persistence.project_file import ProjectFileError, save_project
 
 
 def valid_project() -> Project:
-    project = Project(block_types=[BlockType("normal", "일반")])
+    project = Project(
+        colors=[],
+        block_types=[
+            BlockType("normal_fire", "일반 화염", grade="normal", color="fire")
+        ],
+        effect_definitions=[],
+        status_definitions=[],
+    )
     project.blocks = [
         Block(
-            "red_dot",
-            "붉은 점",
-            "normal",
-            "red",
+            "fire_dot",
+            "불꽃 점",
+            "normal_fire",
+            "fire",
             [Cell(0, 0)],
             effects=[
                 Effect(
-                    "deal_damage",
-                    parameters={"target": "enemy", "range": "single", "amount": 1},
+                    "fire_dot_damage",
+                    description="피해",
+                    effect_name="불꽃 피해",
+                    target="SELECTED",
+                    value=1,
+                    type="BASE_DAMAGE",
                 )
             ],
+            description="설명",
         )
     ]
     project.combinations = [
@@ -38,9 +47,20 @@ def valid_project() -> Project:
             "pair",
             "쌍",
             [
-                BlockInstance("piece_1", "red_dot", Cell(0, 0)),
-                BlockInstance("piece_2", "red_dot", Cell(1, 0)),
+                BlockInstance("piece_01", "fire_dot", Cell(0, 0)),
+                BlockInstance("piece_02", "fire_dot", Cell(1, 0)),
             ],
+            effects=[
+                Effect(
+                    "pair_block",
+                    description="방어",
+                    effect_name="쌍 방어",
+                    target="self",
+                    value=2,
+                    type="BLOCK",
+                )
+            ],
+            description="설명",
         )
     ]
     return project
@@ -48,15 +68,7 @@ def valid_project() -> Project:
 
 def errors(project: Project) -> list[str]:
     return [
-        issue.message for issue in validate_project(project) if issue.severity == "error"
-    ]
-
-
-def warnings(project: Project) -> list[str]:
-    return [
-        issue.message
-        for issue in validate_project(project)
-        if issue.severity == "warning"
+        item.message for item in validate_project(project) if item.severity == "error"
     ]
 
 
@@ -64,23 +76,76 @@ def test_valid_project_has_no_errors() -> None:
     assert errors(valid_project()) == []
 
 
-def test_disconnected_block_is_warning_but_broken_reference_is_error() -> None:
+def test_grade_and_color_follow_new_contract() -> None:
     project = valid_project()
-    project.blocks[0].cells = [Cell(0, 0), Cell(2, 0)]
-    project.blocks[0].type_id = "missing"
+    project.block_types[0].grade = "rare"
+    project.blocks[0].color_id = "red"
     messages = errors(project)
-    assert not any("블록 모양이 분리" in message for message in messages)
-    assert "존재하지 않는 type을 참조합니다." in messages
-    assert any("블록 모양이 분리" in message for message in warnings(project))
+    assert "허용되지 않은 grade입니다." in messages
+    assert "허용되지 않은 color입니다." in messages
 
 
-def test_overlap_is_error() -> None:
+def test_effect_type_target_value_are_validated() -> None:
     project = valid_project()
-    project.combinations[0].instances[1].origin = Cell(0, 0)
-    assert "블록 인스턴스가 겹칩니다." in errors(project)
+    effect = project.blocks[0].effects[0]
+    effect.type = "deal_damage"
+    effect.target = "enemy"
+    effect.value = "많이"
+    messages = errors(project)
+    assert "7.4에서 허용하지 않은 type입니다." in messages
+    assert "7.4에서 허용하지 않은 target입니다." in messages
+    assert "이 효과 type에는 숫자 value가 필요합니다." not in messages
 
 
-def test_overlap_cannot_be_saved_even_as_invalid_draft(tmp_path) -> None:
+def test_effect_id_is_unique_across_project() -> None:
+    project = valid_project()
+    project.combinations[0].effects[0].effect_id = "fire_dot_damage"
+    assert "effect_id가 중복되었습니다." in errors(project)
+
+
+def test_target_range_patterns_are_validated() -> None:
+    project = valid_project()
+    effect = project.blocks[0].effects[0]
+    for target in ("SELECTED", "self", "L1", "R3", "B2", "all"):
+        effect.target = target
+        assert "7.4에서 허용하지 않은 target입니다." not in errors(project)
+    effect.target = "L0"
+    assert "7.4에서 허용하지 않은 target입니다." in errors(project)
+
+
+def test_base_hit_count_uses_damage_value_and_intensify_as_hit_count() -> None:
+    project = valid_project()
+    effect = project.blocks[0].effects[0]
+    effect.type = "BASE_HIT_COUNT"
+    effect.parameter_id = "CURRENT_ACTION"
+    effect.value = 10
+    effect.intensify = 3
+    assert errors(project) == []
+    effect.intensify = 0
+    assert (
+        "BASE_HIT_COUNT의 연속 공격 횟수(intensify)는 1 이상이어야 합니다."
+        in errors(project)
+    )
+    effect.intensify = 3
+    effect.duration = 1
+    assert (
+        "BASE_HIT_COUNT는 CURRENT_ACTION, duration 0을 사용해야 합니다."
+        in errors(project)
+    )
+
+
+def test_type_specific_parameter_id_is_checked() -> None:
+    project = valid_project()
+    effect = project.blocks[0].effects[0]
+    effect.type = "BUFF"
+    effect.target = "self"
+    effect.parameter_id = "DEFENSE"
+    effect.duration = 2
+    effect.intensify = 1
+    assert "이 type에서 허용하지 않은 parameters.id입니다." in errors(project)
+
+
+def test_overlap_cannot_be_saved_even_as_draft(tmp_path) -> None:
     project = valid_project()
     project.combinations[0].instances[1].origin = Cell(0, 0)
     with pytest.raises(ProjectFileError, match="겹쳐 저장할 수 없습니다"):
@@ -92,96 +157,10 @@ def test_overlap_cannot_be_saved_even_as_invalid_draft(tmp_path) -> None:
         )
 
 
-def test_effect_parameter_is_checked() -> None:
+def test_disconnected_block_is_warning() -> None:
     project = valid_project()
-    project.blocks[0].effects[0].parameters = {"amount": "많이"}
-    assert "parameter 'amount' 자료형이 다릅니다." in errors(project)
-
-
-def test_standard_damage_amount_rejects_negative_adjustment() -> None:
-    project = valid_project()
-    project.blocks[0].effects[0].parameters["amount"] = -5
-    assert "'amount'가 최소값보다 작습니다." in errors(project)
-
-
-def test_invalid_ids_and_duplicate_ids_are_errors() -> None:
-    project = valid_project()
-    project.blocks.append(
-        Block("red_dot", "중복", "normal", "red", [Cell(0, 0)])
-    )
-    project.block_types[0].id = "Not Valid"
-    messages = errors(project)
-    assert "ID가 중복되었습니다." in messages
-    assert "ID에는 공백을 사용할 수 없습니다." in messages
-
-
-def test_project_ids_may_start_with_number_uppercase_or_korean() -> None:
-    project = valid_project()
-    project.block_types[0].id = "1일반-Type"
-    project.blocks[0].type_id = "1일반-Type"
-    project.blocks[0].id = "블록A"
-    for instance in project.combinations[0].instances:
-        instance.block_id = "블록A"
-    project.combinations[0].id = "2HitCombo"
-    assert errors(project) == []
-
-
-def test_slot_type_and_conditional_color_are_validated() -> None:
-    project = valid_project()
-    project.combinations[0].instances[0].match = SlotMatch(
-        kind="type", type_id="missing"
-    )
-    project.combinations[0].conditional_effects = [
-        ConditionalEffect(
-            RuleCondition(
-                "color_count", {"color_id": "missing", "count": 0}
-            ),
-            [Effect("deal_damage", parameters={"target": "enemy", "range": "single", "amount": 2})],
-        )
+    project.blocks[0].cells = [Cell(0, 0), Cell(2, 0)]
+    warnings = [
+        item.message for item in validate_project(project) if item.severity == "warning"
     ]
-    messages = errors(project)
-    assert "슬롯 Type이 존재하지 않습니다." in messages
-    assert "조건의 색상 ID가 존재하지 않습니다." in messages
-    assert "색상 개수는 1 이상의 정수여야 합니다." in messages
-
-
-def test_same_color_synergy_may_target_one_color() -> None:
-    project = valid_project()
-    project.combinations[0].conditional_effects = [
-        ConditionalEffect(
-            RuleCondition("all_same_color", {"color_id": "red"}),
-            [Effect("deal_damage", parameters={"target": "enemy", "range": "single", "amount": 2})],
-        )
-    ]
-    assert errors(project) == []
-    project.combinations[0].conditional_effects[0].condition.parameters["color_id"] = "missing"
-    assert "조건의 색상 ID가 존재하지 않습니다." in errors(project)
-
-
-def test_status_identifier_must_exist() -> None:
-    project = valid_project()
-    project.blocks[0].effects.append(
-        Effect(
-            "apply_status",
-            order=1,
-            parameters={
-                "target": "self",
-                "status_id": "steel_skin",
-                "stacks": 1,
-            },
-        )
-    )
-    assert "존재하지 않는 status ID입니다." in errors(project)
-
-
-def test_shape_only_slot_is_valid() -> None:
-    project = valid_project()
-    for instance in project.combinations[0].instances:
-        instance.match = SlotMatch(kind="any_block")
-    assert errors(project) == []
-
-
-def test_combination_instances_do_not_need_to_touch() -> None:
-    project = valid_project()
-    project.combinations[0].instances[1].origin = Cell(2, 2)
-    assert errors(project) == []
+    assert "블록 모양이 분리되어 있습니다." in warnings

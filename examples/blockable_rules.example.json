@@ -1,504 +1,100 @@
 {
   "schema_version": "1.1.0",
+  "data_type": "blockable_block_design",
   "metadata": {
     "project_name": "Blockable",
-    "ruleset_name": "prototype",
-    "updated_at": "2026-07-27T01:21:51+09:00",
-    "validation_status": "valid",
-    "validation_error_count": 0,
-    "validation_warning_count": 0
+    "designer_name": "Blockable Block Designer",
+    "updated_at": "2026-07-29T00:00:00+09:00",
+    "validation_status": "valid"
   },
-  "colors": [
-    {
-      "id": "red",
-      "display_name": "빨간색",
-      "hex": "#E53935"
-    }
-  ],
-  "block_types": [
-    {
-      "id": "normal",
-      "display_name": "일반",
-      "description": ""
-    }
-  ],
-  "effect_definitions": [
-    {
-      "id": "deal_damage",
-      "display_name": "피해",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "minimum": 0,
-          "display_name": "값(피해량)",
-          "allow_negative": true
-        },
-        {
-          "key": "target",
-          "value_type": "enum",
-          "required": false,
-          "options": [
-            "enemy",
-            "all_enemies"
-          ],
-          "display_name": "대상",
-          "option_labels": {
-            "enemy": "적 1명",
-            "all_enemies": "모든 적"
-          }
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "gain_block",
-      "display_name": "블록 획득",
-      "parameters": [
-        {
-          "key": "count",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "값(개수)"
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "heal",
-      "display_name": "회복",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "display_name": "값(회복량)",
-          "allow_negative": true
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "gain_defense",
-      "display_name": "방어 획득",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "display_name": "값(방어량)",
-          "allow_negative": true
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "apply_status",
-      "display_name": "상태·디버프 적용",
-      "parameters": [
-        {
-          "key": "status_name",
-          "value_type": "string",
-          "required": true,
-          "display_name": "상태명(한글 설명)"
-        },
-        {
-          "key": "status_id",
-          "value_type": "identifier",
-          "required": true,
-          "display_name": "상태 ID(영문 JSON 값)"
-        },
-        {
-          "key": "stacks",
-          "value_type": "integer",
-          "required": false,
-          "minimum": 1,
-          "display_name": "값(중첩 수)"
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": false,
-          "minimum": 1,
-          "display_name": "지속 턴"
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "apply_buff",
-      "display_name": "버프 적용",
-      "parameters": [
-        {
-          "key": "buff_name",
-          "value_type": "string",
-          "required": true,
-          "display_name": "버프명(한글 설명)"
-        },
-        {
-          "key": "buff_id",
-          "value_type": "identifier",
-          "required": true,
-          "display_name": "버프 ID(영문 JSON 값)"
-        },
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": false,
-          "display_name": "값(버프 수치)",
-          "allow_negative": true
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": false,
-          "minimum": 1,
-          "display_name": "지속 턴"
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "draw_block",
-      "display_name": "블록 뽑기",
-      "parameters": [
-        {
-          "key": "count",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "값(개수)"
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "gain_gold",
-      "display_name": "골드 획득",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "integer",
-          "required": true,
-          "display_name": "값(골드)",
-          "allow_negative": true
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "modify_next_effect",
-      "display_name": "다음 효과 변경",
-      "parameters": [
-        {
-          "key": "multiplier",
-          "value_type": "number",
-          "required": true,
-          "minimum": 0,
-          "display_name": "값(배율)"
-        }
-      ],
-      "description": ""
-    },
-    {
-      "id": "gain_extra_turn",
-      "display_name": "추가 턴 진행",
-      "parameters": [
-        {
-          "key": "turns",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "추가 턴 수",
-          "default": 1
-        }
-      ],
-      "description": "현재 행동 뒤에 지정한 수만큼 추가 턴을 진행합니다."
-    },
-    {
-      "id": "repeat_each_turn",
-      "display_name": "매 턴 효과 반복",
-      "parameters": [
-        {
-          "key": "effect_id",
-          "value_type": "identifier",
-          "required": true,
-          "display_name": "반복 효과 ID",
-          "description": "매 턴 실행할 별도 효과의 영문 ID입니다."
-        },
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": false,
-          "display_name": "매 턴 값",
-          "allow_negative": true
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "지속 턴",
-          "default": 1
-        },
-        {
-          "key": "target",
-          "value_type": "string",
-          "required": false,
-          "display_name": "대상",
-          "description": "게임에서 해석할 대상 ID입니다."
-        }
-      ],
-      "description": "지정한 효과를 일정 턴 동안 매 턴 실행합니다."
-    },
-    {
-      "id": "deal_damage_each_turn",
-      "display_name": "매 턴 공격",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "display_name": "턴당 피해량",
-          "allow_negative": true
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "반복 턴",
-          "default": 1
-        },
-        {
-          "key": "target",
-          "value_type": "string",
-          "required": false,
-          "display_name": "대상"
-        }
-      ],
-      "description": "지정한 턴 동안 매 턴 대상에게 피해를 줍니다."
-    },
-    {
-      "id": "gain_defense_each_turn",
-      "display_name": "매 턴 방어 획득",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "display_name": "턴당 방어량",
-          "allow_negative": true
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "반복 턴",
-          "default": 1
-        }
-      ],
-      "description": "지정한 턴 동안 매 턴 방어를 획득합니다."
-    },
-    {
-      "id": "heal_each_turn",
-      "display_name": "매 턴 회복",
-      "parameters": [
-        {
-          "key": "amount",
-          "value_type": "number",
-          "required": true,
-          "display_name": "턴당 회복량",
-          "allow_negative": true
-        },
-        {
-          "key": "duration",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "반복 턴",
-          "default": 1
-        }
-      ],
-      "description": "지정한 턴 동안 매 턴 체력을 회복합니다."
-    },
-    {
-      "id": "apply_status_each_turn",
-      "display_name": "매 턴 상태이상 부여",
-      "parameters": [
-        {
-          "key": "status_name",
-          "value_type": "string",
-          "required": true,
-          "display_name": "상태명(한글 설명)"
-        },
-        {
-          "key": "status_id",
-          "value_type": "identifier",
-          "required": true,
-          "display_name": "상태 ID(영문 JSON 값)"
-        },
-        {
-          "key": "stacks",
-          "value_type": "integer",
-          "required": false,
-          "minimum": 1,
-          "display_name": "매 턴 중첩 수"
-        },
-        {
-          "key": "repeat_turns",
-          "value_type": "integer",
-          "required": true,
-          "minimum": 1,
-          "display_name": "반복 턴",
-          "default": 1
-        },
-        {
-          "key": "status_duration",
-          "value_type": "integer",
-          "required": false,
-          "minimum": 1,
-          "display_name": "상태 지속 턴"
-        },
-        {
-          "key": "target",
-          "value_type": "string",
-          "required": false,
-          "display_name": "대상"
-        }
-      ],
-      "description": "지정한 턴 동안 매 턴 대상에게 상태이상을 부여합니다."
-    }
-  ],
   "blocks": [
     {
-      "id": "red_domino",
-      "display_name": "붉은 2칸 블록",
-      "type_id": "normal",
-      "color_id": "red",
+      "block_id": "fire_dot",
+      "block_name": "불꽃 점",
+      "description": "한 칸 화염 블록",
+      "block_type": {
+        "type_id": "normal_fire",
+        "type_name": "일반 화염",
+        "grade": "normal",
+        "color": "fire"
+      },
       "shape": {
         "cells": [
           {
             "x": 0,
             "y": 0
-          },
-          {
-            "x": 1,
-            "y": 0
           }
         ]
       },
-      "transform": {
+      "transform_rule": {
         "allow_rotation": true,
-        "allow_mirroring": false
+        "allow_reflection": false
       },
       "effects": [
         {
-          "effect_id": "deal_damage",
-          "order": 0,
+          "effect_id": "fire_dot_damage",
+          "effect_name": "불꽃 점 피해",
+          "description": "선택한 대상에게 기본 피해 3을 적용한다.",
+          "target": "SELECTED",
+          "type": "BASE_DAMAGE",
+          "value": 3,
           "parameters": {
-            "amount": 2
+            "id": "NONE",
+            "duration": 0,
+            "intensify": 0
           }
         }
-      ],
-      "tags": [],
-      "description": ""
+      ]
     }
   ],
   "combinations": [
     {
-      "id": "red_square",
-      "display_name": "붉은 사각 단조",
-      "instances": [
-        {
-          "instance_id": "piece_1",
-          "block_id": "red_domino",
-          "origin": {
-            "x": 0,
-            "y": 0
+      "combination_id": "fire_pair",
+      "combination_name": "불꽃 쌍",
+      "description": "불꽃 점 두 개를 가로로 배치한다.",
+      "formula": {
+        "instances": [
+          {
+            "instance_id": "piece_01",
+            "block_id": "fire_dot",
+            "origin": {
+              "x": 0,
+              "y": 0
+            },
+            "rotation": 0,
+            "reflected": false
           },
-          "rotation": 0,
-          "mirrored": false,
-          "match": {
-            "kind": "type",
-            "type_id": "normal"
+          {
+            "instance_id": "piece_02",
+            "block_id": "fire_dot",
+            "origin": {
+              "x": 1,
+              "y": 0
+            },
+            "rotation": 0,
+            "reflected": false
           }
-        },
-        {
-          "instance_id": "piece_2",
-          "block_id": "red_domino",
-          "origin": {
-            "x": 1,
-            "y": 2
-          },
-          "rotation": 0,
-          "mirrored": false,
-          "match": {
-            "kind": "type",
-            "type_id": "normal"
-          }
-        }
-      ],
-      "match_options": {
-        "allow_recipe_rotation": true,
-        "allow_recipe_mirroring": false
+        ]
+      },
+      "transform_rule": {
+        "allow_rotation": true,
+        "allow_reflection": false
       },
       "effects": [
         {
-          "effect_id": "deal_damage",
-          "order": 0,
+          "effect_id": "fire_pair_damage",
+          "effect_name": "불꽃 쌍 독립 피해",
+          "description": "모든 대상에게 독립 피해 5를 적용한다.",
+          "target": "all",
+          "type": "INDEPENDENT_DAMAGE",
+          "value": 5,
           "parameters": {
-            "amount": 10
+            "id": "NONE",
+            "duration": 0,
+            "intensify": 0
           }
         }
-      ],
-      "conditional_effects": [
-        {
-          "condition": {
-            "kind": "all_same_color",
-            "parameters": {}
-          },
-          "effects": [
-            {
-              "effect_id": "deal_damage",
-              "order": 1,
-              "parameters": {
-                "amount": 3
-              }
-            }
-          ],
-          "description": "두 블록의 색상이 같으면 추가 피해"
-        }
-      ],
-      "tags": [],
-      "description": ""
-    }
-  ],
-  "color_synergies": [
-    {
-      "id": "red_pair_bonus",
-      "display_name": "붉은 쌍 보너스",
-      "condition": {
-        "kind": "color_count",
-        "parameters": {
-          "color_id": "red",
-          "count": 2
-        }
-      },
-      "effects": [
-        {
-          "effect_id": "deal_damage",
-          "order": 10,
-          "parameters": {
-            "amount": 2
-          }
-        }
-      ],
-      "description": "참여 블록 중 빨간색이 2개면 추가 피해",
-      "enabled": true
+      ]
     }
   ]
 }

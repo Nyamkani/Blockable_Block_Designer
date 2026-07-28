@@ -1,0 +1,413 @@
+{
+  "config_version": "1.0.0",
+  "effect_definitions": [
+    {
+      "id": "s001_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 10 데미지"
+    },
+    {
+      "id": "s002_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 10 데미지"
+    },
+    {
+      "id": "s003_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 10 데미지"
+    },
+    {
+      "id": "f001_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 15 데미지"
+    },
+    {
+      "id": "f002_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 15 데미지"
+    },
+    {
+      "id": "f003_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "단일 15 데미지"
+    },
+    {
+      "id": "w001_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": "수비 획득"
+    },
+    {
+      "id": "w002_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": "수비 획득"
+    },
+    {
+      "id": "w003_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": "수비 획득"
+    },
+    {
+      "id": "n001_recovery_01",
+      "display_name": "heal",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "n002_recovery_01",
+      "display_name": "heal",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "n003_recovery_01",
+      "display_name": "heal",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "l001_draw_01",
+      "display_name": "draw_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "l002_draw_01",
+      "display_name": "draw_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a001_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a002_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a003_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a004_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a005_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "a006_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "l003_draw_01",
+      "display_name": "draw_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "l004_draw_01",
+      "display_name": "draw_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_01_steel_recovery_01",
+      "display_name": "heal",
+      "parameters": [],
+      "description": "앉아서 회복함"
+    },
+    {
+      "id": "base_33_02_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": "임시로 설정한 값입니다"
+    },
+    {
+      "id": "base_33_03_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_04_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_07_steel_debuff_01",
+      "display_name": "apply_status",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_08_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_09_steel_draw_01",
+      "display_name": "draw_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_33_10_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_44_01_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_44_02_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "base_44_03_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_02_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_03_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_04_steel_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_05_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_06_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_07_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_08_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_09_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_10_steel_recovery_01",
+      "display_name": "heal",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_11_steel_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_02_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_03_fire_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_03_fire_base_damage_02",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_04_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_04_fire_block_02",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_05_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_06_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_07_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_08_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_09_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_10_fire_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_02_water_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_02_water_block_02",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_03_water_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_04_water_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_05_water_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_05_water_block_02",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_06_water_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_06_water_base_damage_02",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_07_water_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_08_water_base_damage_01",
+      "display_name": "deal_damage",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_09_water_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_10_water_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "special_44_11_water_block_01",
+      "display_name": "gain_block",
+      "parameters": [],
+      "description": ""
+    },
+    {
+      "id": "test_handaxe_debuff_01",
+      "display_name": "apply_status",
+      "parameters": [],
+      "description": "적에게 상처 부여"
+    }
+  ]
+}

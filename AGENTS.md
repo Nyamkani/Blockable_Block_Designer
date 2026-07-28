@@ -5,21 +5,20 @@
 Before planning or modifying code, read:
 
 - `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`
-- `docs/RULE_SCHEMA_1_1.md`
-- `docs/BLOCKABLE_COMBAT_EFFECT_STANDARD.md`
-- `docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md`
-
+- `docs/BLOCKABLE_COMBAT_SYSTEM.md`
 
 Follow that document unless the current user request explicitly overrides it.
 
-`docs/BLOCKABLE_COMBAT_EFFECT_STANDARD.md` is a read-only upstream contract owned by
-the Blockable game project. Never edit it in this Designer repository. Update the
-Designer implementation and its other documents to follow the latest copied standard.
+`docs/BLOCKABLE_COMBAT_SYSTEM.md` is an upstream combat contract owned by the
+Blockable game project. Do not change its combat rules from this Designer task.
+Update the Designer implementation and its other documents to follow it, especially
+section 7.4.
 
-When importing or saving older data, merge custom effect definitions that are clearly
-equivalent to a standard effect into the standard ID and parameters, then remove the
-duplicate definition. Preserve effects with additional or ambiguous runtime semantics
-as custom effects instead of guessing.
+When importing older data, convert effects only when their meaning can be mapped to a
+7.4 `type`, `target`, integer `value`, and complete
+`parameters.id/duration/intensify` without guessing. Treat `reference_id` as read-only
+legacy input and migrate it to `parameters.id`; never write it in new JSON. Surface
+ambiguous legacy data for review rather than inventing runtime semantics.
 
 ## Documentation maintenance
 

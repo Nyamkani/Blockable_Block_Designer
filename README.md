@@ -1,36 +1,28 @@
 # Blockable Block Designer
 
-현재 버전: `v1.2.3`
+현재 버전: `v1.3.0`
 
-Blockable 웹 게임에서 사용할 블록과 조합 규칙을 시각적으로 만들고 JSON으로
-저장하는 Python 데스크톱 디자인 도구입니다.
+Blockable 본 게임에서 사용할 블록과 조합식 JSON을 제작하는 Python 데스크톱
+도구입니다. 데이터 계약은 `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`와
+`docs/BLOCKABLE_COMBAT_SYSTEM.md` 7.4를 따릅니다.
 
 주요 기능:
 
-- 사용자 정의 Type, 색상 및 블록 모양
-- 정확한 블록, Type, 색상, 태그 또는 임의 블록을 받는 조합 슬롯
-- 모든 슬롯을 한 번에 모양 전용 조합으로 변경
-- 조합의 기본 효과와 같은 색 등 조건부 보너스
-- 모든 조합에 공통 적용할 색상 시너지
-- 회전·반전을 유지하는 조합 블록 드래그 이동
-- 선택 블록 `R` 키 CCW 회전과 편집 중 겹침 하이라이트
-- 색상별 단일 속성 시너지와 사용자 정의 효과 관리
-- `blockable_effect_config.json` 효과 정의 가져오기·내보내기
-- 블록·조합식 목록 순서 편집과 음수 효과 값
-- JSON을 몰라도 사용할 수 있는 효과별 값 입력 폼과 버프 전용 입력
-- 오류가 있어도 작업을 보존할 수 있는 초안 저장 및 재편집
-- 블록·조합식별 입력 적용 버튼과 ID 변경 참조 자동 갱신
-- JSON 검증, 안전 저장 및 `1.0.0` 규칙 파일 호환 로딩
+- 블록 Type의 `grade`와 `color` 관리
+- 블록 원본 좌표와 회전·반전 허용 설정
+- 블록 인스턴스로 조합식 최종 모양 편집
+- 조합식 전체 회전·반전 허용 설정
+- 8장/Combat System 7.4 공통 효과의 ID, 대상, 정수 값, Type과 공통 parameters 편집
+- UTF-8 JSON 검증과 원자적 저장
+- 이전 Designer JSON을 새 계약으로 불러오기
+
+Designer는 실제 조합 탐색, 색상·등급 보너스 판정이나 전투 효과 실행을 하지
+않습니다. `conditional_effects`, `color_synergies`, 태그 기반 조건은 새 조합식
+JSON에 저장하지 않습니다.
 
 ## 실행
 
-Python 3.12 이상이 필요합니다.
-
-패키지를 설치한 환경에서는 `python -m blockable_block_designer`로 실행할 수
-있습니다.
-
-소스 체크아웃에서 설치하지 않고 실행하려면 프로젝트 최상위 폴더에서 다음
-명령을 사용합니다.
+Python 3.12 이상과 `tkinter`가 필요합니다.
 
 Linux:
 
@@ -41,7 +33,7 @@ PYTHONPATH=src python -m blockable_block_designer
 Windows PowerShell:
 
 ```powershell
-$env:PYTHONPATH = "src"
+$env:PYTHONPATH = (Resolve-Path ".\src").Path
 python -m blockable_block_designer
 ```
 
@@ -58,16 +50,14 @@ python -m blockable_block_designer
 PYTHONPATH=src python -m pytest
 ```
 
-규칙 파일은 UTF-8 JSON이며 기본 파일명은 `blockable_block_design.json`입니다.
-현재 최신 디자인은 `examples/blockable_block_design.json`, 최소 스키마 예제는
-`examples/blockable_rules.example.json`에서 확인할 수 있습니다.
+기본 저장 파일명은 `blockable_block_design.json`입니다. 현재 스키마는
+`1.1.0`이며, 새 JSON 계약의 최소
+예제는 `examples/blockable_rules.example.json`에 있습니다.
 
 ## 문서
 
-- 기획 및 개발 기준: `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`
+- 구현 기획 및 JSON 계약: `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`
+- 본 게임 전투 규칙과 7.4 효과: `docs/BLOCKABLE_COMBAT_SYSTEM.md`
 - 사용자 설명서: `docs/USER_MANUAL.md`
-- JSON 1.1 추가 계약: `docs/RULE_SCHEMA_1_1.md`
-- 공통 전투 효과·상태 표준: `docs/BLOCKABLE_COMBAT_EFFECT_STANDARD.md`
-- 업데이트 내역: `update.txt`
-- Codex 작업 지침: `docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md`
-- 효과 설정 예제: `examples/blockable_effect_config.example.json`
+- Codex 연동 지침: `docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md`
+- 변경 내역: `update.txt`

@@ -3,268 +3,255 @@ from __future__ import annotations
 import tkinter as tk
 from tkinter import messagebox, ttk
 
-from ..domain.models import Effect, EffectDefinition, EffectParameterDefinition
-from .effect_definition_editor import EffectDefinitionDialog
+from ..domain.models import (
+    EFFECT_PARAMETER_IDS,
+    EFFECT_TYPES,
+    Effect,
+    EffectDefinition,
+)
+
+TYPE_LABELS = {
+    "BASE_DAMAGE": "기본 공격",
+    "BASE_HIT_COUNT": "연속 공격",
+    "INDEPENDENT_DAMAGE": "독립 공격",
+    "BLOCK": "방어도",
+    "RECOVERY": "회복",
+    "STATUS_DAMAGE": "상태 피해",
+    "DEBUFF": "디버프",
+    "CROWD_CONTROL": "군중 제어",
+    "BUFF": "버프",
+    "EXTRA_TURN": "추가 턴",
+    "DECK_CAPACITY": "덱 한도",
+    "DRAW": "드로우",
+    "PLACEMENT_COUNT": "배치 횟수",
+}
+TARGET_VALUES = ["SELECTED", "self", "L1", "R1", "B1", "all"]
+FIXED_PARAMETERS = {
+    "BASE_DAMAGE": ("NONE", 0, 0),
+    "INDEPENDENT_DAMAGE": ("NONE", 0, 0),
+    "BLOCK": ("NONE", 0, 0),
+    "RECOVERY": ("NONE", 0, 0),
+}
 
 
 class EffectDialog(tk.Toplevel):
-    def __init__(
-        self,
-        master: tk.Misc,
-        definitions: list[EffectDefinition],
-        effect: Effect | None = None,
-        definitions_changed=None,
-    ) -> None:
+    def __init__(self, master, definitions=None, effect=None, used_effect_ids=None):
         super().__init__(master)
-        self.title("효과 편집")
+        self.title("7.4 공통 효과 편집")
         self.resizable(False, False)
         self.result: Effect | None = None
-        self.definitions = definitions
-        self.definitions_changed = definitions_changed
-        self.effect_labels = self._effect_labels()
-        selected_label = next(
+        self.used_effect_ids = set(used_effect_ids or ())
+        if effect is not None:
+            self.used_effect_ids.discard(effect.effect_id)
+        self.definitions: list[EffectDefinition] = list(definitions or [])
+        self.definition_by_label = {
+            self._definition_label(item): item for item in self.definitions
+        }
+        selected_definition = next(
             (
-                label
-                for label, effect_id in self.effect_labels.items()
-                if effect and effect_id == effect.effect_id
+                item
+                for item in self.definitions
+                if effect is not None and item.id == effect.effect_id
             ),
-            "",
+            None,
         )
-        self.effect_id = tk.StringVar(value=selected_label)
-        self.order = tk.StringVar(value=str(effect.order if effect else 0))
+        self.definition_value = tk.StringVar(
+            value=(
+                self._definition_label(selected_definition)
+                if selected_definition is not None
+                else ""
+            )
+        )
+        self.effect_id = tk.StringVar(value=effect.effect_id if effect else "")
+        self.effect_name = tk.StringVar(value=effect.effect_name if effect else "")
+        self.type_value = tk.StringVar(value=effect.type if effect else "BASE_DAMAGE")
+        self.target = tk.StringVar(value=effect.target if effect else "SELECTED")
+        self.value = tk.StringVar(
+            value="" if not effect or effect.value is None else str(effect.value)
+        )
+        self.parameter_id = tk.StringVar(
+            value=effect.parameter_id if effect else "NONE"
+        )
+        self.duration = tk.StringVar(value=str(effect.duration if effect else 0))
+        self.intensify = tk.StringVar(value=str(effect.intensify if effect else 0))
         self.description = tk.StringVar(value=effect.description if effect else "")
-        self.initial_effect_id = effect.effect_id if effect else None
-        self.initial_parameters = dict(effect.parameters) if effect else {}
-        self.parameter_inputs: dict[
-            str, tuple[EffectParameterDefinition, tk.Variable, dict[str, str]]
-        ] = {}
 
         body = ttk.Frame(self, padding=12)
         body.grid(sticky="nsew")
-        ttk.Label(body, text="효과").grid(row=0, column=0, sticky="w", pady=4)
-        self.effect_combo = ttk.Combobox(
+        ttk.Label(body, text="저장된 효과 설정").grid(
+            row=0, column=0, sticky="w", pady=4
+        )
+        definition_combo = ttk.Combobox(
             body,
-            textvariable=self.effect_id,
-            values=list(self.effect_labels),
+            textvariable=self.definition_value,
+            values=list(self.definition_by_label),
             state="readonly",
-            width=34,
+            width=32,
         )
-        self.effect_combo.grid(row=0, column=1, sticky="ew")
-        self.effect_combo.bind(
-            "<<ComboboxSelected>>", lambda _event: self._render_parameters()
+        definition_combo.grid(row=0, column=1, sticky="ew", pady=4)
+        definition_combo.bind(
+            "<<ComboboxSelected>>", lambda _event: self._definition_changed()
         )
-        ttk.Label(body, text="효과 적용 순서").grid(
-            row=1, column=0, sticky="w", pady=4
-        )
-        ttk.Entry(body, textvariable=self.order).grid(row=1, column=1, sticky="ew")
-        ttk.Label(body, text="효과 값 설정").grid(
-            row=2, column=0, columnspan=2, sticky="w", pady=(8, 2)
-        )
-        self.parameter_frame = ttk.LabelFrame(body, text="선택한 효과의 입력값", padding=8)
-        self.parameter_frame.grid(row=3, column=0, columnspan=2, sticky="ew")
-        create_frame = ttk.LabelFrame(body, text="효과 만들기", padding=8)
-        create_frame.grid(row=4, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        rows = [
+            ("효과 ID", self.effect_id, "entry"),
+            ("효과 이름", self.effect_name, "entry"),
+            ("실행 Type", self.type_value, "type"),
+            ("대상", self.target, "target"),
+            ("값", self.value, "entry"),
+            ("Parameters ID", self.parameter_id, "parameter_id"),
+            ("지속 턴", self.duration, "entry"),
+            ("강도/추가 스택", self.intensify, "entry"),
+            ("설명", self.description, "entry"),
+        ]
+        for row, (label, variable, kind) in enumerate(rows, start=1):
+            label_widget = ttk.Label(body, text=label)
+            label_widget.grid(row=row, column=0, sticky="w", pady=4)
+            if kind == "type":
+                widget = ttk.Combobox(
+                    body, textvariable=variable, values=sorted(EFFECT_TYPES),
+                    state="readonly", width=32,
+                )
+            elif kind == "target":
+                widget = ttk.Combobox(
+                    body, textvariable=variable, values=TARGET_VALUES,
+                    state="normal", width=32,
+                )
+            elif kind == "parameter_id":
+                widget = ttk.Combobox(
+                    body, textvariable=variable, state="readonly", width=32,
+                )
+                self.parameter_id_combo = widget
+            else:
+                widget = ttk.Entry(body, textvariable=variable, width=35)
+            widget.grid(row=row, column=1, sticky="ew", pady=4)
+            if kind == "type":
+                widget.bind("<<ComboboxSelected>>", lambda _event: self._type_changed())
+            elif label == "지속 턴":
+                self.duration_entry = widget
+            elif label == "강도/추가 스택":
+                self.intensify_entry = widget
+                self.intensify_label = label_widget
+            elif label == "값":
+                self.value_label = label_widget
         ttk.Label(
-            create_frame,
-            text="목록에 없는 효과는 한 번 정의한 뒤 모든 탭에서 다시 사용할 수 있습니다.",
-        ).pack(side="left")
-        ttk.Button(
-            create_frame, text="새 효과 만들기", command=self._create_definition
-        ).pack(side="right", padx=(8, 0))
-        ttk.Label(body, text="설명").grid(row=5, column=0, sticky="w", pady=4)
-        ttk.Entry(body, textvariable=self.description).grid(row=5, column=1, sticky="ew")
+            body,
+            text="대상: SELECTED, self, Lx/Rx/Bx, all · value는 정수입니다.",
+            foreground="#64748B",
+        ).grid(row=len(rows) + 1, column=0, columnspan=2, sticky="w", pady=(6, 0))
         buttons = ttk.Frame(body)
-        buttons.grid(row=6, column=0, columnspan=2, sticky="e", pady=(12, 0))
+        buttons.grid(
+            row=len(rows) + 2,
+            column=0,
+            columnspan=2,
+            sticky="e",
+            pady=(12, 0),
+        )
         ttk.Button(buttons, text="취소", command=self.destroy).pack(side="right")
         ttk.Button(buttons, text="확인", command=self._accept).pack(side="right", padx=6)
-        self._render_parameters()
         self.transient(master)
         self.grab_set()
+        self._type_changed(preserve=True)
 
-    def _effect_labels(self) -> dict[str, str]:
-        return {
-            f"{item.display_name} ({item.id})": item.id for item in self.definitions
-        }
+    @staticmethod
+    def _definition_label(definition: EffectDefinition) -> str:
+        return f"{definition.display_name} · {definition.id}"
 
-    def _create_definition(self) -> None:
-        dialog = EffectDefinitionDialog(self)
-        self.wait_window(dialog)
-        if not dialog.result:
+    def _definition_changed(self) -> None:
+        definition = self.definition_by_label.get(self.definition_value.get())
+        if definition is None:
             return
-        if any(item.id == dialog.result.id for item in self.definitions):
-            messagebox.showerror(
-                "추가 불가", "같은 효과 ID가 이미 존재합니다.", parent=self
-            )
-            return
-        self.definitions.append(dialog.result)
-        if self.definitions_changed:
-            self.definitions_changed()
-        self.effect_labels = self._effect_labels()
-        self.effect_combo.configure(values=list(self.effect_labels))
-        label = next(
-            label
-            for label, effect_id in self.effect_labels.items()
-            if effect_id == dialog.result.id
+        effect_id = definition.id
+        suffix = 2
+        while effect_id in self.used_effect_ids:
+            effect_id = f"{definition.id}_{suffix}"
+            suffix += 1
+        self.effect_id.set(effect_id)
+        self.effect_name.set(definition.display_name)
+        self.description.set(definition.description)
+
+    def _type_changed(self, preserve: bool = False) -> None:
+        effect_type = self.type_value.get()
+        options = sorted(EFFECT_PARAMETER_IDS.get(effect_type, set()))
+        self.parameter_id_combo.configure(values=options)
+        self.value_label.configure(
+            text="데미지" if effect_type == "BASE_HIT_COUNT" else "값"
         )
-        self.effect_id.set(label)
-        self.initial_effect_id = None
-        self.initial_parameters = {}
-        self._render_parameters()
-
-    def _selected_definition(self) -> EffectDefinition | None:
-        effect_id = self.effect_labels.get(self.effect_id.get())
-        return next(
-            (item for item in self.definitions if item.id == effect_id),
-            None,
+        self.intensify_label.configure(
+            text=(
+                "연속 공격 횟수"
+                if effect_type == "BASE_HIT_COUNT"
+                else "강도/추가 스택"
+            )
         )
-
-    def _render_parameters(self) -> None:
-        for child in self.parameter_frame.winfo_children():
-            child.destroy()
-        self.parameter_inputs.clear()
-        definition = self._selected_definition()
-        if not definition:
-            ttk.Label(self.parameter_frame, text="먼저 효과를 선택하세요.").grid(
-                row=0, column=0, sticky="w"
-            )
-            return
-        values = (
-            self.initial_parameters
-            if definition.id == self.initial_effect_id
-            else {}
-        )
-        specifications = list(definition.parameters)
-        known_keys = {item.key for item in specifications}
-        for key, value in values.items():
-            if key not in known_keys:
-                value_type = (
-                    "boolean"
-                    if isinstance(value, bool)
-                    else "integer"
-                    if isinstance(value, int)
-                    else "number"
-                    if isinstance(value, float)
-                    else "string"
-                )
-                specifications.append(
-                    EffectParameterDefinition(
-                        key,
-                        value_type,
-                        False,
-                        display_name=f"기존 값: {key}",
-                    )
-                )
-        if not specifications:
-            ttk.Label(
-                self.parameter_frame,
-                text="이 효과에는 별도의 입력값이 없습니다.",
-            ).grid(row=0, column=0, sticky="w")
-            return
-        for row, specification in enumerate(specifications):
-            required = " *" if specification.required else ""
-            label = specification.display_name or specification.key
-            ttk.Label(self.parameter_frame, text=f"{label}{required}").grid(
-                row=row, column=0, sticky="w", padx=(0, 8), pady=3
-            )
-            current = values.get(
-                specification.key,
-                "" if specification.default is None else specification.default,
-            )
-            reverse_options: dict[str, str] = {}
-            if specification.value_type == "boolean":
-                variable: tk.Variable = tk.BooleanVar(
-                    value=bool(current) if current != "" else False
-                )
-                widget = ttk.Checkbutton(self.parameter_frame, variable=variable)
-            elif specification.value_type == "enum":
-                labels = {
-                    value: specification.option_labels.get(str(value), str(value))
-                    for value in specification.options
-                }
-                reverse_options = {label: str(value) for value, label in labels.items()}
-                selected = labels.get(current, "")
-                variable = tk.StringVar(value=selected)
-                widget = ttk.Combobox(
-                    self.parameter_frame,
-                    textvariable=variable,
-                    values=list(reverse_options),
-                    state="readonly",
-                    width=28,
-                )
-            else:
-                variable = tk.StringVar(value="" if current == "" else str(current))
-                widget = ttk.Entry(
-                    self.parameter_frame, textvariable=variable, width=31
-                )
-            widget.grid(row=row, column=1, sticky="ew", pady=3)
-            if specification.description:
-                ttk.Label(
-                    self.parameter_frame,
-                    text=specification.description,
-                    foreground="#64748B",
-                ).grid(row=row, column=2, sticky="w", padx=(6, 0))
-            self.parameter_inputs[specification.key] = (
-                specification,
-                variable,
-                reverse_options,
-            )
-        self.parameter_frame.columnconfigure(1, weight=1)
-
-    def _parameter_values(self) -> dict[str, object]:
-        result: dict[str, object] = {}
-        for key, (specification, variable, reverse_options) in self.parameter_inputs.items():
-            raw = variable.get()
-            if specification.value_type == "boolean":
-                if specification.required or raw:
-                    result[key] = bool(raw)
-                continue
-            text = str(raw).strip()
-            if not text:
-                if specification.required:
-                    raise ValueError(
-                        f"'{specification.display_name or key}' 값을 입력하세요."
-                    )
-                continue
-            if specification.value_type == "integer":
-                result[key] = int(text)
-            elif specification.value_type == "number":
-                result[key] = float(text) if "." in text else int(text)
-            elif specification.value_type == "enum":
-                result[key] = reverse_options.get(text, text)
-            else:
-                result[key] = text
-        return result
+        fixed = FIXED_PARAMETERS.get(effect_type)
+        if fixed:
+            self.parameter_id.set(fixed[0])
+            self.duration.set(str(fixed[1]))
+            self.intensify.set(str(fixed[2]))
+            self.parameter_id_combo.configure(state="disabled")
+            self.duration_entry.configure(state="disabled")
+            self.intensify_entry.configure(state="disabled")
+        elif effect_type == "BASE_HIT_COUNT":
+            self.parameter_id.set("CURRENT_ACTION")
+            self.duration.set("0")
+            self.parameter_id_combo.configure(state="disabled")
+            self.duration_entry.configure(state="disabled")
+            self.intensify_entry.configure(state="normal")
+            try:
+                hit_count = int(self.intensify.get())
+            except ValueError:
+                hit_count = 0
+            if not preserve or hit_count < 1:
+                self.intensify.set("1")
+        else:
+            self.parameter_id_combo.configure(state="readonly")
+            self.duration_entry.configure(state="normal")
+            self.intensify_entry.configure(state="normal")
+            if not preserve or self.parameter_id.get() not in options:
+                self.parameter_id.set(options[0] if options else "")
 
     def _accept(self) -> None:
         try:
-            parameters = self._parameter_values()
-            order = int(self.order.get())
-            effect_id = self.effect_labels.get(self.effect_id.get())
-            if not effect_id:
-                raise ValueError("효과를 선택하세요.")
+            raw = self.value.get().strip()
+            value = int(raw)
+            duration = int(self.duration.get())
+            intensify = int(self.intensify.get())
+            if not self.effect_id.get().strip():
+                raise ValueError("효과 ID를 입력하세요.")
+            if not self.effect_name.get().strip():
+                raise ValueError("효과 이름을 입력하세요.")
+            if self.type_value.get() == "BASE_HIT_COUNT" and intensify < 1:
+                raise ValueError("연속 공격 횟수는 1 이상이어야 합니다.")
         except ValueError as error:
             messagebox.showerror("입력 오류", str(error), parent=self)
             return
         self.result = Effect(
-            effect_id, order, parameters, self.description.get().strip()
+            effect_id=self.effect_id.get().strip(),
+            description=self.description.get().strip(),
+            effect_name=self.effect_name.get().strip(),
+            target=self.target.get(),
+            value=value,
+            type=self.type_value.get(),
+            parameter_id=self.parameter_id.get(),
+            duration=duration,
+            intensify=intensify,
         )
         self.destroy()
 
 
 class EffectList(ttk.LabelFrame):
     def __init__(
-        self,
-        master: tk.Misc,
-        effects_getter,
-        definitions_getter,
-        changed,
-        definitions_changed=None,
+        self, master, effects_getter, definitions_getter, changed,
+        definitions_changed=None, effect_ids_getter=None,
     ) -> None:
-        super().__init__(master, text="효과", padding=6)
+        super().__init__(master, text="7.4 공통 효과", padding=6)
         self.effects_getter = effects_getter
         self.definitions_getter = definitions_getter
         self.changed = changed
-        self.definitions_changed = definitions_changed or changed
+        self.open_definitions = definitions_changed
+        self.effect_ids_getter = effect_ids_getter or (
+            lambda: {effect.effect_id for effect in self.effects_getter()}
+        )
         self.listbox = tk.Listbox(self, height=5)
         self.listbox.pack(fill="both", expand=True)
         buttons = ttk.Frame(self)
@@ -272,60 +259,69 @@ class EffectList(ttk.LabelFrame):
         ttk.Button(buttons, text="추가", command=self.add).pack(side="left")
         ttk.Button(buttons, text="수정", command=self.edit).pack(side="left", padx=4)
         ttk.Button(buttons, text="삭제", command=self.delete).pack(side="left")
+        ttk.Button(buttons, text="위", command=lambda: self.move(-1)).pack(side="left", padx=(8, 2))
+        ttk.Button(buttons, text="아래", command=lambda: self.move(1)).pack(side="left")
+        if self.open_definitions is not None:
+            ttk.Button(
+                buttons, text="효과 설정", command=self.open_definitions
+            ).pack(side="right")
         self.listbox.bind("<Double-1>", lambda _event: self.edit())
 
     def refresh(self) -> None:
         self.listbox.delete(0, "end")
-        effects = self.effects_getter()
-        for item in sorted(effects, key=lambda effect: effect.order):
-            definition = next(
-                (
-                    definition
-                    for definition in self.definitions_getter()
-                    if definition.id == item.effect_id
-                ),
-                None,
+        for item in self.effects_getter():
+            name = TYPE_LABELS.get(item.type, item.type)
+            self.listbox.insert(
+                "end", f"{item.effect_name} · {name} · {item.target} · {item.value}"
             )
-            name = definition.display_name if definition else item.effect_id
-            self.listbox.insert("end", f"{item.order}: {name} ({item.effect_id})")
 
     def add(self) -> None:
-        effects = self.effects_getter()
         dialog = EffectDialog(
             self,
-            self.definitions_getter(),
-            definitions_changed=self.definitions_changed,
+            definitions=self.definitions_getter(),
+            used_effect_ids=self.effect_ids_getter(),
         )
         self.wait_window(dialog)
         if dialog.result:
-            effects.append(dialog.result)
+            self.effects_getter().append(dialog.result)
             self.changed()
             self.refresh()
 
     def edit(self) -> None:
         selection = self.listbox.curselection()
         effects = self.effects_getter()
-        if not selection or not effects:
+        if not selection:
             return
-        ordered = sorted(enumerate(effects), key=lambda pair: pair[1].order)
-        original_index, effect = ordered[selection[0]]
+        index = selection[0]
         dialog = EffectDialog(
             self,
-            self.definitions_getter(),
-            effect,
-            self.definitions_changed,
+            definitions=self.definitions_getter(),
+            effect=effects[index],
+            used_effect_ids=self.effect_ids_getter(),
         )
         self.wait_window(dialog)
         if dialog.result:
-            effects[original_index] = dialog.result
+            effects[index] = dialog.result
             self.changed()
             self.refresh()
 
     def delete(self) -> None:
         selection = self.listbox.curselection()
-        effects = self.effects_getter()
-        if selection and effects:
-            ordered = sorted(enumerate(effects), key=lambda pair: pair[1].order)
-            del effects[ordered[selection[0]][0]]
+        if selection:
+            del self.effects_getter()[selection[0]]
             self.changed()
             self.refresh()
+
+    def move(self, delta: int) -> None:
+        selection = self.listbox.curselection()
+        effects = self.effects_getter()
+        if not selection:
+            return
+        source = selection[0]
+        target = source + delta
+        if target < 0 or target >= len(effects):
+            return
+        effects[source], effects[target] = effects[target], effects[source]
+        self.changed()
+        self.refresh()
+        self.listbox.selection_set(target)

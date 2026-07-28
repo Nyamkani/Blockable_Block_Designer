@@ -3,8 +3,42 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-SCHEMA_VERSION = "1.2.0"
-SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", SCHEMA_VERSION}
+SCHEMA_VERSION = "1.1.0"
+DATA_TYPE = "blockable_block_design"
+SUPPORTED_SCHEMA_VERSIONS = {"1.0.0", "1.1.0", "1.2.0"}
+EFFECT_TYPES = {
+    "BASE_DAMAGE",
+    "BASE_HIT_COUNT",
+    "INDEPENDENT_DAMAGE",
+    "BLOCK",
+    "RECOVERY",
+    "STATUS_DAMAGE",
+    "DEBUFF",
+    "CROWD_CONTROL",
+    "BUFF",
+    "EXTRA_TURN",
+    "DECK_CAPACITY",
+    "DRAW",
+    "PLACEMENT_COUNT",
+}
+EFFECT_TARGETS = {"SELECTED", "self", "all"}
+EFFECT_PARAMETER_IDS = {
+    "BASE_DAMAGE": {"NONE"},
+    "BASE_HIT_COUNT": {"CURRENT_ACTION"},
+    "INDEPENDENT_DAMAGE": {"NONE"},
+    "BLOCK": {"NONE"},
+    "RECOVERY": {"NONE"},
+    "STATUS_DAMAGE": {"BURN", "BLEED", "POISON"},
+    "DEBUFF": {"ATTACK_REDUCTION", "DAMAGE_TAKEN_INCREASE"},
+    "CROWD_CONTROL": {"STUN", "FREEZE", "ACTION_LOCK"},
+    "BUFF": {"DAMAGE_BONUS", "HIT_COUNT", "ATTACK_MULTIPLIER"},
+    "EXTRA_TURN": {"PLAYER_TURN"},
+    "DECK_CAPACITY": {"MAIN_DECK"},
+    "DRAW": {"MAIN_DECK"},
+    "PLACEMENT_COUNT": {"BLOCK_PLACEMENT"},
+}
+BLOCK_GRADES = {"normal", "special", "legend", "curse"}
+BLOCK_COLORS = {"steel", "nature", "fire", "water", "none"}
 
 
 @dataclass(frozen=True, order=True)
@@ -25,6 +59,8 @@ class BlockType:
     id: str
     display_name: str
     description: str = ""
+    grade: str = "normal"
+    color: str = "none"
 
 
 @dataclass
@@ -66,6 +102,15 @@ class Effect:
     order: int = 0
     parameters: dict[str, Any] = field(default_factory=dict)
     description: str = ""
+    effect_name: str = ""
+    target: str = "self"
+    value: int | None = None
+    type: str = ""
+    parameter_id: str = "NONE"
+    duration: int = 0
+    intensify: int = 0
+    reference_id: str | None = None
+    extra: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -140,13 +185,11 @@ class ColorSynergy:
 
 def default_colors() -> list[Color]:
     return [
-        Color("red", "빨간색", "#E53935"),
-        Color("orange", "주황색", "#FB8C00"),
-        Color("yellow", "노란색", "#FDD835"),
-        Color("green", "초록색", "#43A047"),
-        Color("blue", "파란색", "#1E88E5"),
-        Color("indigo", "남색", "#3949AB"),
-        Color("purple", "보라색", "#8E24AA"),
+        Color("steel", "강철", "#9E9E9E"),
+        Color("nature", "자연", "#43A047"),
+        Color("fire", "불", "#E53935"),
+        Color("water", "물", "#1E88E5"),
+        Color("none", "무색", "#64748B"),
     ]
 
 
@@ -514,16 +557,20 @@ def default_effect_definitions() -> list[EffectDefinition]:
 @dataclass
 class Project:
     schema_version: str = SCHEMA_VERSION
+    data_type: str = DATA_TYPE
     metadata: dict[str, Any] = field(
-        default_factory=lambda: {"project_name": "Blockable", "ruleset_name": "prototype"}
+        default_factory=lambda: {
+            "project_name": "Blockable",
+            "designer_name": "Blockable Block Designer",
+        }
     )
     colors: list[Color] = field(default_factory=default_colors)
     block_types: list[BlockType] = field(default_factory=list)
     effect_definitions: list[EffectDefinition] = field(
-        default_factory=default_effect_definitions
+        default_factory=list
     )
     status_definitions: list[StatusDefinition] = field(
-        default_factory=default_status_definitions
+        default_factory=list
     )
     blocks: list[Block] = field(default_factory=list)
     combinations: list[Combination] = field(default_factory=list)

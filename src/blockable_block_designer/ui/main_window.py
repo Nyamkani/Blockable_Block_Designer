@@ -7,6 +7,8 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from ..domain.models import (
     Block,
+    BLOCK_COLORS,
+    BLOCK_GRADES,
     BlockInstance,
     BlockType,
     Cell,
@@ -31,7 +33,7 @@ from ..persistence.effect_config import (
 from ..persistence.project_file import ProjectFileError, load_project, save_project
 from ..services.block_service import rename_block, toggle_cell
 from ..services.combination_service import move_instance
-from ..services.effect_migration import migrate_effect_standard
+from ..services.effect_preview import combination_effect_preview
 from .effect_definition_editor import EffectDefinitionDialog
 from .effect_editor import EffectList
 from .grid_canvas import GridCanvas
@@ -57,6 +59,8 @@ class MainWindow:
         self.root.geometry("1180x760")
         self.root.minsize(980, 650)
         self.project = Project()
+        self.effect_config_path = Path.cwd() / "blockable_effect_config.json"
+        self._load_effect_library()
         self.path: Path | None = None
         self.dirty = False
         self.current_block: Block | None = None
@@ -98,33 +102,24 @@ class MainWindow:
         self.notebook.pack(fill="both", expand=True, padx=8, pady=8)
         self.project_tab = ttk.Frame(self.notebook, padding=16)
         self.type_tab = ttk.Frame(self.notebook, padding=10)
-        self.color_tab = ttk.Frame(self.notebook, padding=10)
-        self.effect_definition_tab = ttk.Frame(self.notebook, padding=10)
-        self.status_definition_tab = ttk.Frame(self.notebook, padding=10)
         self.block_tab = ttk.Frame(self.notebook, padding=10)
         self.combo_tab = ttk.Frame(self.notebook, padding=10)
-        self.synergy_tab = ttk.Frame(self.notebook, padding=10)
+        self.effect_definition_tab = ttk.Frame(self.notebook, padding=10)
         self.validation_tab = ttk.Frame(self.notebook, padding=10)
         for tab, name in [
             (self.project_tab, "프로젝트"),
-            (self.type_tab, "Type 관리"),
-            (self.color_tab, "색상 관리"),
-            (self.effect_definition_tab, "효과 정의"),
-            (self.status_definition_tab, "상태 정의"),
+            (self.type_tab, "블록 Type 관리"),
             (self.block_tab, "블록 편집기"),
             (self.combo_tab, "조합식 편집기"),
-            (self.synergy_tab, "색상 시너지"),
+            (self.effect_definition_tab, "효과 설정"),
             (self.validation_tab, "검사 결과"),
         ]:
             self.notebook.add(tab, text=name)
         self._build_project_tab()
         self._build_simple_tab(self.type_tab, "type")
-        self._build_simple_tab(self.color_tab, "color")
-        self._build_effect_definition_tab()
-        self._build_status_definition_tab()
         self._build_block_tab()
         self._build_combo_tab()
-        self._build_synergy_tab()
+        self._build_effect_definition_tab()
         self._build_validation_tab()
 
     def _build_project_tab(self) -> None:
@@ -140,9 +135,9 @@ class MainWindow:
         form = ttk.LabelFrame(self.project_tab, text="메타데이터", padding=12)
         form.pack(fill="x", pady=16)
         self.project_name_var = tk.StringVar()
-        self.ruleset_name_var = tk.StringVar()
+        self.ruleset_name_var = tk.StringVar(value="Blockable Block Designer")
         for row, (label, variable) in enumerate(
-            [("프로젝트 이름", self.project_name_var), ("규칙 세트 이름", self.ruleset_name_var)]
+            [("프로젝트 이름", self.project_name_var), ("Designer", self.ruleset_name_var)]
         ):
             ttk.Label(form, text=label).grid(row=row, column=0, sticky="w", padx=(0, 10), pady=5)
             entry = ttk.Entry(form, textvariable=variable, width=50)
@@ -206,13 +201,12 @@ class MainWindow:
 
         right = ttk.Frame(self.block_tab)
         right.pack(side="left", fill="y")
-        self.block_vars = {key: tk.StringVar() for key in ("id", "name", "type", "color", "tags")}
+        self.block_vars = {key: tk.StringVar() for key in ("id", "name", "type", "color")}
         for label, key in [
             ("ID", "id"),
             ("이름", "name"),
             ("Type", "type"),
             ("색상", "color"),
-            ("태그(쉼표)", "tags"),
         ]:
             ttk.Label(right, text=label).pack(anchor="w")
             if key in {"type", "color"}:
@@ -221,6 +215,7 @@ class MainWindow:
                     self.block_type_combo = widget
                 else:
                     self.block_color_combo = widget
+                    widget.configure(values=sorted(BLOCK_COLORS))
             else:
                 widget = ttk.Entry(right, textvariable=self.block_vars[key])
             widget.pack(fill="x", pady=(0, 5))
@@ -243,7 +238,8 @@ class MainWindow:
             lambda: self.current_block.effects if self.current_block else [],
             lambda: self.project.effect_definitions,
             self.mark_dirty,
-            self.effect_definitions_changed,
+            self.open_effect_definition_tab,
+            lambda: {effect.effect_id for effect in self._all_effects()},
         )
         self.block_effects.pack(fill="both", expand=True, pady=(8, 0))
 
@@ -292,43 +288,30 @@ class MainWindow:
         )
         self.instance_label = ttk.Label(center, text="선택 인스턴스: 없음")
         self.instance_label.pack()
-        slot_frame = ttk.LabelFrame(center, text="선택 슬롯의 허용 조건", padding=6)
-        slot_frame.pack(fill="x", pady=(8, 0))
-        self.slot_kind_var = tk.StringVar(value="정확한 블록")
-        self.slot_kind_combo = ttk.Combobox(
-            slot_frame,
-            textvariable=self.slot_kind_var,
-            values=list(SLOT_KIND_LABELS),
-            state="readonly",
-            width=16,
+        preview_frame = ttk.LabelFrame(center, text="예상 효과", padding=6)
+        preview_frame.pack(fill="x", pady=(10, 0))
+        self.combo_effect_preview = tk.Text(
+            preview_frame,
+            height=4,
+            wrap="word",
+            background="#11100E",
+            foreground="#F2E8D5",
+            insertbackground="#F2E8D5",
+            relief="flat",
+            padx=9,
+            pady=7,
         )
-        self.slot_kind_combo.pack(side="left")
-        self.slot_kind_combo.bind(
-            "<<ComboboxSelected>>", lambda _event: self._slot_kind_changed()
-        )
-        self.slot_value_var = tk.StringVar()
-        self.slot_value_combo = ttk.Combobox(
-            slot_frame, textvariable=self.slot_value_var, width=20
-        )
-        self.slot_value_combo.pack(side="left", padx=5)
-        ttk.Button(slot_frame, text="조건 적용", command=self.apply_slot_match).pack(
-            side="left"
-        )
-        ttk.Button(
-            center,
-            text="전체 슬롯을 모양만 일치(색상·블록 ID 무시)",
-            command=self.apply_shape_only_to_all_slots,
-        ).pack(pady=(5, 0))
+        self.combo_effect_preview.pack(fill="x")
+        self.combo_effect_preview.configure(state="disabled")
         ttk.Label(
-            center,
-            text="배치 블록은 슬롯 모양의 기준이며, 조건에 맞는 같은 모양 블록을 허용합니다.",
-            wraplength=460,
-        ).pack(pady=(4, 0))
-
+            preview_frame,
+            text="배치 블록과 조합식의 저장된 효과만 합산합니다. 색상·등급 시너지는 제외됩니다.",
+            foreground="#64748B",
+        ).pack(anchor="w", pady=(4, 0))
         right = ttk.Frame(self.combo_tab)
         right.pack(side="left", fill="y")
-        self.combo_vars = {key: tk.StringVar() for key in ("id", "name", "tags")}
-        for label, key in [("ID", "id"), ("이름", "name"), ("태그(쉼표)", "tags")]:
+        self.combo_vars = {key: tk.StringVar() for key in ("id", "name")}
+        for label, key in [("ID", "id"), ("이름", "name")]:
             ttk.Label(right, text=label).pack(anchor="w")
             entry = ttk.Entry(right, textvariable=self.combo_vars[key], width=28)
             entry.pack(fill="x", pady=(0, 5))
@@ -355,22 +338,11 @@ class MainWindow:
             right,
             lambda: self.current_combination.effects if self.current_combination else [],
             lambda: self.project.effect_definitions,
-            self.mark_dirty,
-            self.effect_definitions_changed,
+            self._combo_effects_changed,
+            self.open_effect_definition_tab,
+            lambda: {effect.effect_id for effect in self._all_effects()},
         )
         self.combo_effects.pack(fill="both", expand=True, pady=(8, 0))
-        self.combo_conditional_effects = ConditionalEffectList(
-            right,
-            lambda: (
-                self.current_combination.conditional_effects
-                if self.current_combination
-                else []
-            ),
-            lambda: self.project.effect_definitions,
-            self.mark_dirty,
-            definitions_changed=self.effect_definitions_changed,
-        )
-        self.combo_conditional_effects.pack(fill="both", expand=True, pady=(8, 0))
 
     def _build_synergy_tab(self) -> None:
         left = ttk.Frame(self.synergy_tab)
@@ -419,12 +391,15 @@ class MainWindow:
     def _build_effect_definition_tab(self) -> None:
         ttk.Label(
             self.effect_definition_tab,
-            text="사용자 정의 효과",
+            text="재사용 효과 설정",
             font=("TkDefaultFont", 12, "bold"),
         ).pack(anchor="w")
         ttk.Label(
             self.effect_definition_tab,
-            text="효과명, 게임용 ID, 설명과 입력값을 정의합니다. 실제 실행 코드는 본 게임에서 ID에 연결해야 합니다.",
+            text=(
+                "자주 쓰는 효과 ID·효과명·설명을 한 번 등록하고 블록·조합식 효과 "
+                "추가창에서 선택해 사용합니다."
+            ),
         ).pack(anchor="w", pady=(2, 8))
         self.effect_definition_tree = ttk.Treeview(
             self.effect_definition_tab,
@@ -517,7 +492,7 @@ class MainWindow:
 
     def _metadata_changed(self) -> None:
         self.project.metadata["project_name"] = self.project_name_var.get()
-        self.project.metadata["ruleset_name"] = self.ruleset_name_var.get()
+        self.project.metadata["designer_name"] = "Blockable Block Designer"
         self.mark_dirty()
 
     def mark_dirty(self) -> None:
@@ -534,13 +509,13 @@ class MainWindow:
 
     def refresh_all(self) -> None:
         self.project_name_var.set(self.project.metadata.get("project_name", ""))
-        self.ruleset_name_var.set(self.project.metadata.get("ruleset_name", ""))
+        self.ruleset_name_var.set("Blockable Block Designer")
         self.type_list.delete(0, "end")
         for item in self.project.block_types:
-            self.type_list.insert("end", f"{item.id} — {item.display_name}")
-        self.color_list.delete(0, "end")
-        for item in self.project.colors:
-            self.color_list.insert("end", f"{item.id} — {item.display_name} ({item.hex})")
+            self.type_list.insert(
+                "end",
+                f"{item.id} — {item.display_name} · {item.grade}/{item.color}",
+            )
         self.block_list.delete(0, "end")
         self.palette_list.delete(0, "end")
         for item in self.project.blocks:
@@ -550,14 +525,36 @@ class MainWindow:
         self.combo_list.delete(0, "end")
         for item in self.project.combinations:
             self.combo_list.insert("end", f"{item.id} — {item.display_name}")
-        self._refresh_effect_definitions()
-        self._refresh_status_definitions()
-        self._refresh_synergies()
         self.block_type_combo.configure(values=[item.id for item in self.project.block_types])
-        self.block_color_combo.configure(values=[item.id for item in self.project.colors])
+        self.block_color_combo.configure(values=sorted(BLOCK_COLORS))
+        self._refresh_effect_definitions()
         self._draw_block()
         self._draw_combo()
         self._update_title()
+
+    def _load_effect_library(self) -> None:
+        if not self.effect_config_path.exists():
+            return
+        try:
+            self.project.effect_definitions = load_effect_config(
+                self.effect_config_path
+            )
+        except EffectConfigError as error:
+            messagebox.showwarning(
+                "효과 설정 불러오기 실패",
+                f"{error}\n\n프로그램은 빈 효과 설정으로 계속 실행합니다.",
+            )
+
+    def _persist_effect_library(self) -> bool:
+        try:
+            save_effect_config(
+                self.project.effect_definitions,
+                self.effect_config_path,
+            )
+        except EffectConfigError as error:
+            messagebox.showerror("효과 설정 저장 실패", str(error))
+            return False
+        return True
 
     def _confirm_discard(self) -> bool:
         return not self.dirty or messagebox.askyesno(
@@ -567,7 +564,9 @@ class MainWindow:
     def new_project(self) -> None:
         if not self._confirm_discard():
             return
+        effect_definitions = copy.deepcopy(self.project.effect_definitions)
         self.project = Project()
+        self.project.effect_definitions = effect_definitions
         self.path = None
         self.dirty = False
         self.current_block = None
@@ -588,13 +587,24 @@ class MainWindow:
         except ProjectFileError as error:
             messagebox.showerror("열기 실패", str(error))
             return
+        project.effect_definitions = copy.deepcopy(self.project.effect_definitions)
         self.project = project
-        self.path = Path(filename)
-        self.dirty = False
+        migrated = bool(project.extra.get("migrated_from_legacy"))
+        self.path = None if migrated else Path(filename)
+        self.dirty = migrated
         self.current_block = None
         self.current_combination = None
         self.selected_instance = None
         self.refresh_all()
+        if migrated:
+            messagebox.showinfo(
+                "레거시 JSON 변환",
+                (
+                    "이전 형식의 JSON을 새 기획 형식으로 변환해 열었습니다.\n"
+                    "원본 보호를 위해 저장 위치를 비웠습니다. 저장할 때 새 파일명을 선택하세요.\n"
+                    "metadata.migration_notes가 있으면 이전 조건·시너지 이전 항목도 확인하세요."
+                ),
+            )
         issues = validate_project(self.project)
         errors = [item for item in issues if item.severity == "error"]
         if errors:
@@ -702,9 +712,14 @@ class MainWindow:
         return result
 
     def add_type(self) -> None:
-        values = self._simple_item_dialog("Type 추가", [("ID", ""), ("이름", ""), ("설명", "")])
+        values = self._simple_item_dialog(
+            "Type 추가",
+            [("Type ID", ""), ("Type 이름", ""), ("등급", "normal"), ("색상", "none")],
+        )
         if values:
-            self.project.block_types.append(BlockType(*values))
+            self.project.block_types.append(
+                BlockType(values[0], values[1], grade=values[2], color=values[3])
+            )
             self.mark_dirty()
             self.refresh_all()
 
@@ -714,14 +729,21 @@ class MainWindow:
             return
         item = self.project.block_types[selection[0]]
         values = self._simple_item_dialog(
-            "Type 수정", [("ID", item.id), ("이름", item.display_name), ("설명", item.description)]
+            "Type 수정",
+            [
+                ("Type ID", item.id),
+                ("Type 이름", item.display_name),
+                ("등급", item.grade),
+                ("색상", item.color),
+            ],
         )
         if values:
             old_id = item.id
-            item.id, item.display_name, item.description = values
+            item.id, item.display_name, item.grade, item.color = values
             for block in self.project.blocks:
                 if block.type_id == old_id:
                     block.type_id = item.id
+                    block.color_id = item.color
             self.mark_dirty()
             self.refresh_all()
 
@@ -780,7 +802,7 @@ class MainWindow:
             f"block_{len(self.project.blocks) + 1}",
             "새 블록",
             self.project.block_types[0].id if self.project.block_types else "",
-            self.project.colors[0].id if self.project.colors else "",
+            self.project.block_types[0].color if self.project.block_types else "none",
             [Cell(0, 0)],
         )
         self.project.blocks.append(block)
@@ -832,7 +854,6 @@ class MainWindow:
             ("name", block.display_name),
             ("type", block.type_id),
             ("color", block.color_id),
-            ("tags", ", ".join(block.tags)),
         ]:
             self.block_vars[key].set(value)
         self.block_rotation_var.set(block.allow_rotation)
@@ -850,11 +871,12 @@ class MainWindow:
         block.display_name = self.block_vars["name"].get().strip()
         block.type_id = self.block_vars["type"].get()
         block.color_id = self.block_vars["color"].get()
-        block.tags = [
-            item.strip()
-            for item in self.block_vars["tags"].get().split(",")
-            if item.strip()
-        ]
+        block_type = next(
+            (item for item in self.project.block_types if item.id == block.type_id),
+            None,
+        )
+        if block_type:
+            block_type.color = block.color_id
         block.allow_rotation = self.block_rotation_var.get()
         block.allow_mirroring = self.block_mirror_var.get()
         block.description = self.block_description.get("1.0", "end").strip()
@@ -890,10 +912,13 @@ class MainWindow:
         self.block_canvas.draw_grid()
         if not self.current_block:
             return
-        color = next(
-            (item.hex for item in self.project.colors if item.id == self.current_block.color_id),
-            "#64748B",
-        )
+        color = {
+            "steel": "#9E9E9E",
+            "nature": "#43A047",
+            "fire": "#E53935",
+            "water": "#1E88E5",
+            "none": "#64748B",
+        }.get(self.current_block.color_id, "#64748B")
         for cell in self.current_block.cells:
             self.block_canvas.fill_cell(cell, color)
 
@@ -954,13 +979,11 @@ class MainWindow:
             return
         self.combo_vars["id"].set(combo.id)
         self.combo_vars["name"].set(combo.display_name)
-        self.combo_vars["tags"].set(", ".join(combo.tags))
         self.recipe_rotation_var.set(combo.allow_recipe_rotation)
         self.recipe_mirror_var.set(combo.allow_recipe_mirroring)
         self.combo_description.delete("1.0", "end")
         self.combo_description.insert("1.0", combo.description)
         self.combo_effects.refresh()
-        self.combo_conditional_effects.refresh()
         self._draw_combo()
 
     def _apply_combo_form(self) -> None:
@@ -969,15 +992,24 @@ class MainWindow:
             return
         combo.id = self.combo_vars["id"].get().strip()
         combo.display_name = self.combo_vars["name"].get().strip()
-        combo.tags = [
-            item.strip()
-            for item in self.combo_vars["tags"].get().split(",")
-            if item.strip()
-        ]
         combo.allow_recipe_rotation = self.recipe_rotation_var.get()
         combo.allow_recipe_mirroring = self.recipe_mirror_var.get()
         combo.description = self.combo_description.get("1.0", "end").strip()
         self.mark_dirty()
+        self._refresh_combo_effect_preview()
+
+    def _combo_effects_changed(self) -> None:
+        self.mark_dirty()
+        self._refresh_combo_effect_preview()
+
+    def _refresh_combo_effect_preview(self) -> None:
+        lines = combination_effect_preview(
+            self.project, self.current_combination
+        )
+        self.combo_effect_preview.configure(state="normal")
+        self.combo_effect_preview.delete("1.0", "end")
+        self.combo_effect_preview.insert("1.0", "\n".join(lines))
+        self.combo_effect_preview.configure(state="disabled")
 
     def save_current_combination(self) -> None:
         if not self.current_combination:
@@ -1008,7 +1040,6 @@ class MainWindow:
             block = blocks.get(instance.block_id)
             if block and cell in instance_cells(instance, block):
                 self.selected_instance = instance
-                self._load_slot_match()
                 self._draw_combo()
                 return
         selection = self.palette_list.curselection()
@@ -1020,7 +1051,6 @@ class MainWindow:
         )
         combo.instances.append(candidate)
         self.selected_instance = candidate
-        self._load_slot_match()
         self.mark_dirty()
         self._draw_combo()
 
@@ -1040,7 +1070,6 @@ class MainWindow:
             return False
         self.selected_instance = instance
         self._drag_offset = Cell(cell.x - instance.origin.x, cell.y - instance.origin.y)
-        self._load_slot_match()
         self._draw_combo()
         return True
 
@@ -1064,6 +1093,7 @@ class MainWindow:
         combo = self.current_combination
         if not combo:
             self.instance_label.configure(text="선택 인스턴스: 없음")
+            self._refresh_combo_effect_preview()
             return
         blocks = {item.id: item for item in self.project.blocks}
         colors = {item.id: item.hex for item in self.project.colors}
@@ -1089,12 +1119,12 @@ class MainWindow:
         self.instance_label.configure(
             text=(
                 f"선택 인스턴스: {self.selected_instance.instance_id} "
-                f"({self.selected_instance.block_id}) · "
-                f"{self._slot_summary(self.selected_instance.match)}"
+                f"({self.selected_instance.block_id})"
                 if self.selected_instance
                 else "선택 인스턴스: 없음"
             )
         )
+        self._refresh_combo_effect_preview()
 
     def _slot_summary(self, match: SlotMatch) -> str:
         label = next(
@@ -1339,6 +1369,9 @@ class MainWindow:
         self.mark_dirty()
         self._refresh_effect_definitions()
 
+    def open_effect_definition_tab(self) -> None:
+        self.notebook.select(self.effect_definition_tab)
+
     def _selected_effect_definition(self) -> tuple[int, EffectDefinition] | None:
         selection = self.effect_definition_tree.selection()
         if not selection:
@@ -1354,6 +1387,7 @@ class MainWindow:
                 messagebox.showerror("추가 불가", "같은 효과 ID가 이미 존재합니다.")
                 return
             self.project.effect_definitions.append(dialog.result)
+            self._persist_effect_library()
             self.mark_dirty()
             self._refresh_effect_definitions()
 
@@ -1375,6 +1409,7 @@ class MainWindow:
             for effect in self._all_effects():
                 if effect.effect_id == old_id:
                     effect.effect_id = dialog.result.id
+        self._persist_effect_library()
         self.mark_dirty()
         self.refresh_all()
 
@@ -1402,6 +1437,7 @@ class MainWindow:
             return
         if messagebox.askyesno("효과 정의 삭제", f"'{definition.display_name}'을 삭제하시겠습니까?"):
             del self.project.effect_definitions[index]
+            self._persist_effect_library()
             self.mark_dirty()
             self._refresh_effect_definitions()
 
@@ -1443,6 +1479,7 @@ class MainWindow:
                 self.project.effect_definitions[index] = definition
                 replaced += 1
         if added or replaced:
+            self._persist_effect_library()
             self.mark_dirty()
             self.refresh_all()
         messagebox.showinfo(
