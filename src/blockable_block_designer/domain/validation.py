@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from typing import Any
@@ -53,6 +54,7 @@ def _validate_effects(
 ) -> None:
     value_types = {
         "BASE_DAMAGE",
+        "BASE_HIT_COUNT",
         "INDEPENDENT_DAMAGE",
         "BLOCK",
         "RECOVERY",
@@ -81,9 +83,11 @@ def _validate_effects(
         if not TARGET_PATTERN.fullmatch(effect.target):
             issues.append(ValidationIssue("error", here, "7.4에서 허용하지 않은 target입니다."))
         if effect.type in value_types and (
-            not isinstance(effect.value, int) or isinstance(effect.value, bool)
+            not isinstance(effect.value, (int, float))
+            or isinstance(effect.value, bool)
+            or not math.isfinite(effect.value)
         ):
-            issues.append(ValidationIssue("error", here, "효과 value는 정수여야 합니다."))
+            issues.append(ValidationIssue("error", here, "효과 value는 유한한 숫자여야 합니다."))
         if effect.extra.get("_missing_parameters"):
             issues.append(
                 ValidationIssue(
@@ -124,6 +128,39 @@ def _validate_effects(
             issues.append(
                 ValidationIssue("error", here, "즉시 효과의 parameters 기본값 규칙과 다릅니다.")
             )
+        integer_value_pairs = {
+            ("EXTRA_TURN", "CURRENT_ACTION"),
+            ("EXTRA_TURN", "PLAYER_TURN"),
+            ("DECK_CAPACITY", "MAIN_DECK"),
+            ("DRAW", "MAIN_DECK"),
+            ("PLACEMENT_COUNT", "CURRENT_ACTION"),
+            ("PLACEMENT_COUNT", "BLOCK_PLACEMENT"),
+        }
+        if (
+            (effect.type, effect.parameter_id) in integer_value_pairs
+            and (not isinstance(effect.value, int) or isinstance(effect.value, bool))
+        ):
+            issues.append(
+                ValidationIssue("error", here, "횟수·용량 효과의 value는 정수여야 합니다.")
+            )
+        fixed_parameters = {
+            ("CROWD_CONTROL", "STUN"): (1, 1),
+            ("EXTRA_TURN", "CURRENT_ACTION"): (0, 1),
+            ("DRAW", "MAIN_DECK"): (0, 1),
+            ("PLACEMENT_COUNT", "CURRENT_ACTION"): (0, 1),
+        }
+        expected = fixed_parameters.get((effect.type, effect.parameter_id))
+        if expected and (effect.duration, effect.intensify) != expected:
+            issues.append(
+                ValidationIssue(
+                    "error",
+                    here,
+                    (
+                        f"{effect.type} + {effect.parameter_id}는 "
+                        f"duration {expected[0]}, intensify {expected[1]}을 사용해야 합니다."
+                    ),
+                )
+            )
         if effect.type == "BASE_HIT_COUNT":
             if effect.parameter_id != "CURRENT_ACTION" or effect.duration != 0:
                 issues.append(
@@ -142,7 +179,7 @@ def _validate_effects(
                     ValidationIssue(
                         "error",
                         here,
-                        "BASE_HIT_COUNT의 연속 공격 횟수(intensify)는 1 이상이어야 합니다.",
+                        "BASE_HIT_COUNT의 총 공격 횟수(intensify)는 1 이상이어야 합니다.",
                     )
                 )
 

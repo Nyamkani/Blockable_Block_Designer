@@ -1,7 +1,7 @@
 Blockable Block Designer 업데이트 내역
-현재 버전: v1.3.0
+현재 버전: v1.3.1
 
-[v1.3.0 기준 주요 변경]
+[v1.3.1 기준 주요 변경]
 - 화면에서 누락되었던 재사용 `효과 설정` 탭을 복구했다.
 - 효과 설정을 프로젝트 상대 위치의 `blockable_effect_config.json`에 자동
   저장하고, 블록·조합식 효과 편집창에서 드롭다운으로 재사용할 수 있게 했다.
@@ -10,10 +10,20 @@ Blockable Block Designer 업데이트 내역
   표시를 추가했다.
 - 공격 예상 효과에 선택 대상, 전체, 좌·우·좌우 범위를 표시하고 범위가 다른
   공격은 별도로 계산한다.
-- `BASE_HIT_COUNT.value`는 1회당 데미지,
-  `parameters.intensify`는 1 이상의 연속 공격 횟수로 편집·검증·표시한다.
+- 본 게임의 현재 Type·Parameters ID 연결표를 Designer 허용 목록과 용어에
+  반영했다.
+- 연속 기본 공격은 `BASE_HIT_COUNT + CURRENT_ACTION`, 출혈은
+  `STATUS_DAMAGE + BLEEDING`으로 통일하고 삭제된 `BUFF + HIT_COUNT`는
+  허용하지 않는다.
+- `DECK_CAPACITY`, 임시·최종 추가 턴 ID, 임시·최종 배치 횟수 ID와
+  `BUFF + RAGE`를 선택·보존할 수 있게 했다.
+- 비율 `value`는 `10`과 `0.1`을 모두 10%로 입력할 수 있게 했다.
+- 미구현·미연결 Parameters ID는 드롭다운에서 `(미구현 ID)`로 표시하되
+  JSON에는 원래 ID만 저장한다.
 - 이전 디자인 JSON을 현행 `schema_version: 1.1.0` 구조로 변환하고,
   자동 판단할 수 없는 조건·시너지는 마이그레이션 메모로 보존한다.
+- `examples/blockable_block_design.json`의 `DRAW + MAIN_DECK` 5개를
+  `duration: 0/intensify: 1`로 마이그레이션하고 오류 0건을 확인했다.
 
 [주요 기능 추가]
 - 사용자 정의 Block Type과 색상 관리 기능
@@ -51,7 +61,7 @@ Blockable Block Designer 업데이트 내역
 
 [참고]
 - 이 파일은 변경 내역을 구체적인 과거 버전별로 구분하지 않는다.
-- 현재 배포 및 문서의 기준 버전은 v1.3.0이다.
+- 현재 배포 및 문서의 기준 버전은 v1.3.1이다.
 - 조합식에서 배치된 블록을 회전·반전 상태를 유지한 채 드래그 이동할 수 있다.
 - 특정 색상을 지정하는 단일 속성 시너지를 추가했다.
 - 공격·방어·회복 등 합산 수치에 음수 값을 사용할 수 있다.
@@ -78,7 +88,7 @@ Blockable Block Designer 업데이트 내역
 - `conditional_effects`, `color_synergies`, 태그 및 슬롯 조건을 새 출력 JSON에서 제거했다.
 - 레거시 JSON은 원본을 덮어쓰지 않고 새 이름으로 저장하도록 변경했다.
 - JSON 스키마를 1.1.0으로 올리고 모든 효과에 `parameters.id/duration/intensify`를 추가했다.
-- `BASE_HIT_COUNT`와 현재 행동 연타 규칙을 효과 편집기 및 검증기에 추가했다.
+- 연속 공격과 현재 행동 횟수 규칙을 효과 편집기 및 검증기에 추가했다.
 - 대상 형식을 `SELECTED`, `self`, `Lx/Rx/Bx`, `all`로 통일했다.
 - Type별 Parameters ID 드롭다운, 자동 고정값과 효과 배열 위·아래 이동을 추가했다.
 - 이전 `reference_id`와 parameters 없는 1.0 효과를 1.1 구조로 변환한다.
@@ -90,7 +100,7 @@ Blockable Block Designer 업데이트 내역
   실시간으로 보여주는 `예상 효과` 표시를 추가했다.
 - 예상 효과의 공격 계열 항목에 선택 대상·전체·좌·우·좌우 공격 범위를
   표시하고, 범위가 다른 공격은 별도로 합산하도록 했다.
-- `BASE_HIT_COUNT`의 `value`를 1회당 데미지,
-  `parameters.intensify`를 연속 공격 횟수로 편집·검증·표시하도록 변경했다.
+- 본 게임의 최종 연결 현황에 맞춰 `BASE_HIT_COUNT`, `DECK_CAPACITY`,
+  `BLEEDING`, `RAGE` 및 임시·후보 ID를 Designer에 반영했다.
 문서 정리
 - Codex 작업 지침 파일명의 `Insstruction` 오타를 `Instruction`으로 정정하고 관련 참조를 갱신했습니다.

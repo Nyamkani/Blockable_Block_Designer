@@ -182,12 +182,13 @@ def test_version_1_0_effect_is_upgraded_with_parameters(tmp_path: Path) -> None:
     }
 
 
-def test_version_1_0_base_hit_count_defaults_to_one_attack(tmp_path: Path) -> None:
+def test_version_1_0_base_hit_count_defaults_to_one_total_attack(tmp_path: Path) -> None:
     data = project_to_dict(new_project())
     data["schema_version"] = "1.0.0"
     effect = data["blocks"][0]["effects"][0]
     effect.pop("parameters")
     effect["type"] = "BASE_HIT_COUNT"
+    effect["target"] = "SELECTED"
     effect["value"] = 8
     path = tmp_path / "version-1.0-hit-count.json"
     path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")

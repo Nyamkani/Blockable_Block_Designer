@@ -1,6 +1,6 @@
 # Blockable Block Designer
 
-현재 버전: `v1.3.0`
+현재 버전: `v1.3.1`
 
 Blockable 본 게임에서 사용할 블록과 조합식 JSON을 제작하는 Python 데스크톱
 도구입니다. 데이터 계약은 `docs/BLOCKABLE_BLOCK_DESIGNER_PLAN.md`와

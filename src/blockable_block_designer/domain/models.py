@@ -28,14 +28,14 @@ EFFECT_PARAMETER_IDS = {
     "INDEPENDENT_DAMAGE": {"NONE"},
     "BLOCK": {"NONE"},
     "RECOVERY": {"NONE"},
-    "STATUS_DAMAGE": {"BURN", "BLEED", "POISON"},
+    "STATUS_DAMAGE": {"BURN", "BLEEDING", "POISON"},
     "DEBUFF": {"ATTACK_REDUCTION", "DAMAGE_TAKEN_INCREASE"},
     "CROWD_CONTROL": {"STUN", "FREEZE", "ACTION_LOCK"},
-    "BUFF": {"DAMAGE_BONUS", "HIT_COUNT", "ATTACK_MULTIPLIER"},
-    "EXTRA_TURN": {"PLAYER_TURN"},
+    "BUFF": {"DAMAGE_BONUS", "RAGE", "ATTACK_MULTIPLIER"},
+    "EXTRA_TURN": {"CURRENT_ACTION", "PLAYER_TURN"},
     "DECK_CAPACITY": {"MAIN_DECK"},
     "DRAW": {"MAIN_DECK"},
-    "PLACEMENT_COUNT": {"BLOCK_PLACEMENT"},
+    "PLACEMENT_COUNT": {"CURRENT_ACTION", "BLOCK_PLACEMENT"},
 }
 BLOCK_GRADES = {"normal", "special", "legend", "curse"}
 BLOCK_COLORS = {"steel", "nature", "fire", "water", "none"}
@@ -104,7 +104,7 @@ class Effect:
     description: str = ""
     effect_name: str = ""
     target: str = "self"
-    value: int | None = None
+    value: int | float | None = None
     type: str = ""
     parameter_id: str = "NONE"
     duration: int = 0

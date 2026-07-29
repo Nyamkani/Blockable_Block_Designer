@@ -1,6 +1,6 @@
 # Blockable Block Designer 사용 설명서
 
-현재 프로그램 버전: `v1.3.0`
+현재 프로그램 버전: `v1.3.1`
 
 ## 1. 용도
 
@@ -118,9 +118,13 @@ PLACEMENT_COUNT
 모든 효과는 `parameters.id`, `duration`, `intensify`를 빠짐없이 저장합니다.
 `BASE_DAMAGE`, `INDEPENDENT_DAMAGE`, `BLOCK`, `RECOVERY`는
 `NONE/0/0`으로 자동 고정됩니다.
-`BASE_HIT_COUNT`는 `value`에 1회당 데미지,
-`parameters.intensify`에 1 이상의 연속 공격 횟수를 입력하며,
-`parameters.id/duration`은 `CURRENT_ACTION/0`으로 고정됩니다.
+`BASE_HIT_COUNT`는 이번 행동에만 적용되는 연속 기본 공격입니다.
+`value`에는 기본 공격 1타의 B, `intensify`에는 이번 행동의 총 공격 횟수 H를
+입력하며 `CURRENT_ACTION/duration: 0`으로 고정됩니다.
+`BUFF + HIT_COUNT`는 삭제된 구성이므로 사용할 수 없습니다.
+`value`는 정수 또는 소수를 입력할 수 있으며, 비율은 임시 호환 규칙으로
+`10`과 `0.1`을 모두 10%로 해석합니다. 추가 횟수·용량처럼 개수를 나타내는
+효과의 `value`는 정수여야 합니다.
 `effect_name`이나 `description`을 게임 실행 키로 사용하면 안 됩니다.
 
 ## 7. 재사용 효과 설정
@@ -176,11 +180,16 @@ Designer JSON에 저장된 블록·조합식 효과만 계산하는 편집 보�
 표시합니다. Type이 같아도 공격 범위가 다르면 서로 합산하지 않고 별도 항목으로
 표시합니다.
 
-`BASE_HIT_COUNT`는 다음처럼 데미지와 연속 공격 횟수를 함께 표시합니다.
+예상 효과는 Type뿐 아니라 Parameters ID의 표시명도 사용합니다. 예를 들어
+`STATUS_DAMAGE + BURN`은 `화상`, `DEBUFF + ATTACK_REDUCTION`은 `약화`,
+`BASE_HIT_COUNT + CURRENT_ACTION`은 다음처럼 표시합니다.
 
 ```text
-연속 공격: 데미지 7 × 3회 [기준+오른쪽 2칸]
+연속 기본 공격: B 5 × H 6 [선택 대상]
 ```
+
+미구현·미연결 Parameters ID는 드롭다운에서 `(미구현 ID)`가 함께 표시됩니다.
+JSON에는 괄호 문구 없이 원래 ID만 저장됩니다.
 
 새 JSON에는 다음 항목을 저장하지 않습니다.
 
@@ -218,9 +227,11 @@ Designer JSON에 저장된 블록·조합식 효과만 계산하는 편집 보�
 
 - 중복되거나 올바르지 않은 블록·조합식·인스턴스·효과 ID
 - 허용되지 않은 등급, 색상, 효과 Type, 대상 또는 Parameters ID
-- 정수 `value` 누락
+- 유한한 숫자 `value` 누락
 - `parameters.id/duration/intensify` 누락 또는 Type별 고정값 위반
-- `BASE_HIT_COUNT`의 연속 공격 횟수가 1 미만
+- 횟수·용량 효과의 `value`가 정수가 아님
+- `BASE_HIT_COUNT`의 `CURRENT_ACTION/duration: 0/intensify: 1+` 규칙 위반
+- `STUN`, 현재 행동 추가 턴, 드로우, 현재 행동 배치 효과의 고정 매개변수 위반
 - 빈 블록 모양
 - 존재하지 않는 블록 참조
 - 허용되지 않은 회전·반전

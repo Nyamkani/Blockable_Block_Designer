@@ -30,10 +30,10 @@ DEFAULT_PARAMETER_ID = {
     "INDEPENDENT_DAMAGE": "NONE",
     "BLOCK": "NONE",
     "RECOVERY": "NONE",
-    "EXTRA_TURN": "PLAYER_TURN",
+    "EXTRA_TURN": "CURRENT_ACTION",
     "DECK_CAPACITY": "MAIN_DECK",
     "DRAW": "MAIN_DECK",
-    "PLACEMENT_COUNT": "BLOCK_PLACEMENT",
+    "PLACEMENT_COUNT": "CURRENT_ACTION",
 }
 
 
@@ -48,17 +48,23 @@ def _normalized_target(value: str) -> str:
 
 def _parameter_defaults(effect_type: str, reference_id: str | None = None) -> tuple[str, int, int]:
     parameter_id = reference_id or DEFAULT_PARAMETER_ID.get(effect_type, "NONE")
-    if parameter_id == "double_attack":
-        parameter_id = "HIT_COUNT"
-    elif parameter_id in {"weakness", "weak"}:
+    if parameter_id in {"weakness", "weak"}:
         parameter_id = "ATTACK_REDUCTION"
     elif parameter_id in {"wound", "injury", "injry"}:
         parameter_id = "DAMAGE_TAKEN_INCREASE"
     elif parameter_id == "stun":
         parameter_id = "STUN"
     elif parameter_id in {"burn", "bleeding", "bleed"}:
-        parameter_id = "BURN" if parameter_id == "burn" else "BLEED"
-    return parameter_id, 0, 1 if effect_type == "BASE_HIT_COUNT" else 0
+        parameter_id = "BURN" if parameter_id == "burn" else "BLEEDING"
+    duration = 1 if (effect_type, parameter_id) == ("CROWD_CONTROL", "STUN") else 0
+    fixed_intensify = {
+        ("CROWD_CONTROL", "STUN"),
+        ("BASE_HIT_COUNT", "CURRENT_ACTION"),
+        ("EXTRA_TURN", "CURRENT_ACTION"),
+        ("DRAW", "MAIN_DECK"),
+        ("PLACEMENT_COUNT", "CURRENT_ACTION"),
+    }
+    return parameter_id, duration, 1 if (effect_type, parameter_id) in fixed_intensify else 0
 
 
 def _effect_from_new(data: dict[str, Any], migrate_missing: bool = False) -> Effect:

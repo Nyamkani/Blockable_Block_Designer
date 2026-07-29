@@ -514,7 +514,7 @@ none
 | `effect_name` | string | 예 | 표시 이름 |
 | `description` | string | 예 | 사람이 읽는 설명 |
 | `target` | enum/string | 예 | 8.1에서 정한 적용 대상 |
-| `value` | integer | 예 | 실제 계산에 사용하는 피해·회복·증감·횟수 |
+| `value` | number | 예 | 실제 계산에 사용하는 피해·회복·비율·증감·횟수 |
 | `type` | enum | 예 | 실제 실행 방식 |
 | `parameters` | object | 예 | `id`, `duration`, `intensify`를 가진 공통 매개변수 |
 
@@ -547,9 +547,10 @@ all
 
 #### `value`
 
-- 정수형이며 양수, `0`, 음수를 허용한다.
+- 유한한 숫자이며 양수, `0`, 음수를 허용한다.
 - 실제 피해량, 회복량, 능력치 증감량 또는 횟수를 뜻한다.
-- 비율은 부동소수점 대신 정수 퍼센트로 저장한다. 예를 들어 `50`은 `+50%`다.
+- 횟수·용량 효과는 정수만 허용한다.
+- 비율은 임시 호환 규칙으로 `10`과 `0.1`을 모두 `10%`로 해석한다.
 
 #### `parameters`
 
@@ -593,24 +594,48 @@ PLACEMENT_COUNT
 | `type` | `value` | `parameters.id` | `duration` | `intensify` |
 |---|---|---|---:|---:|
 | `BASE_DAMAGE` | 이번 기본 공격에 더할 기초 공격력 | `NONE` | `0` | `0` |
-| `BASE_HIT_COUNT` | 1회당 연속 공격 데미지 | `CURRENT_ACTION` | `0` | 연속 공격 횟수(1+) |
+| `BASE_HIT_COUNT` | 이번 행동 기본 공격 1타의 B | `CURRENT_ACTION` | `0` | 이번 행동의 총 공격 횟수 H(1+) |
 | `INDEPENDENT_DAMAGE` | 별도로 실행할 독립 공격 기준값 | `NONE` | `0` | `0` |
 | `BLOCK` | 획득할 소모형 방어도 | `NONE` | `0` | `0` |
 | `RECOVERY` | 회복량 | `NONE` | `0` | `0` |
-| `STATUS_DAMAGE` | 스택당 피해 계수 또는 상태별 계산값 | `BURN`, `BLEED`, `POISON` | 지속 턴 | 추가 스택·강도 |
+| `STATUS_DAMAGE` | 스택당 피해 계수 또는 상태별 계산값 | `BURN`, `BLEEDING`, `POISON` | 지속 턴 | 추가 스택·강도 |
 | `DEBUFF` | 1스택당 감소량 또는 비율 | `ATTACK_REDUCTION`, `DAMAGE_TAKEN_INCREASE` | 지속 턴 | 추가 스택·강도 |
 | `CROWD_CONTROL` | 별도 계산값이 있을 때 사용 | `STUN`, `FREEZE`, `ACTION_LOCK` | 지속 턴 | 추가 스택·강도 |
-| `BUFF` | 1스택당 증가량 또는 비율 | `DAMAGE_BONUS`, `HIT_COUNT`, `ATTACK_MULTIPLIER` | 지속 턴 | 추가 스택·강도 |
-| `EXTRA_TURN` | 추가 턴 수 | `PLAYER_TURN` | `0` | 필요 시 강도 |
-| `DECK_CAPACITY` | 덱 용량 증감값 | `MAIN_DECK` | 적용 기간 | 필요 시 강도 |
-| `DRAW` | 드로우 개수 | `MAIN_DECK` | `0` | 필요 시 강도 |
-| `PLACEMENT_COUNT` | 배치 횟수 증감값 | `BLOCK_PLACEMENT` | 적용 기간 | 필요 시 강도 |
+| `BUFF` | 직접 추가·배율·분노 | `DAMAGE_BONUS`, `RAGE`, `ATTACK_MULTIPLIER` | 효과별 | 효과별 |
+| `EXTRA_TURN` | 추가 턴 수 | `CURRENT_ACTION`, `PLAYER_TURN` | 효과별 | 효과별 |
+| `DECK_CAPACITY` | 덱 용량 증가량 | `MAIN_DECK` | 개별 값 | 개별 값 |
+| `DRAW` | 드로우 개수 | `MAIN_DECK` | `0` | `1` |
+| `PLACEMENT_COUNT` | 배치 횟수 증감값 | `CURRENT_ACTION`, `BLOCK_PLACEMENT` | 효과별 | 효과별 |
 
-`BASE_HIT_COUNT`는 런타임 상태로 저장하지 않고 `value` 데미지의 공격을
-`parameters.intensify` 횟수만큼 실행하는 현재 행동의 연속 공격으로 해석한다.
-반대로 `BUFF + HIT_COUNT`는 자신 상태 갱신 목록 `S`에 등록된 뒤 이후 행동의
-공격 횟수 계산에 참여한다. Designer와 본 게임은 두 효과를 서로 대체하거나
-같은 의미로 취급하면 안 된다.
+`BASE_HIT_COUNT`는 유지되는 BUFF가 아니라 현재 행동에만 적용된다.
+`value`는 각 타격의 B이고 `parameters.intensify`는 해당 행동의 총 공격
+횟수 H다. 각 타격은 `(B + P) × M × D × W`를 사용하는 개별 공격으로
+실행한다. `BUFF + HIT_COUNT`는 삭제된 구성이므로 허용하지 않는다.
+`DECK_CAPACITY`는 현재 본 게임에서 값 파싱과 보존까지만 지원하며 실제 용량
+변경은 아직 구현되지 않았다.
+
+본 게임 연결 상태:
+
+| `type + parameters.id` | 표시명 | 상태 |
+|---|---|---|
+| `BASE_HIT_COUNT + CURRENT_ACTION` | 이번 행동 연속 기본 공격 | 구현 |
+| `STATUS_DAMAGE + BURN` | 화상 | 구현 |
+| `STATUS_DAMAGE + BLEEDING` | 출혈 | 구현 |
+| `STATUS_DAMAGE + POISON` | 독 | 미구현 |
+| `DEBUFF + ATTACK_REDUCTION` | 약화 | 구현 |
+| `DEBUFF + DAMAGE_TAKEN_INCREASE` | 상처 | 구현 |
+| `CROWD_CONTROL + STUN` | 기절 | 구현 |
+| `CROWD_CONTROL + FREEZE` | 냉동 | 미구현 |
+| `CROWD_CONTROL + ACTION_LOCK` | 행동 정지 | 미구현 |
+| `BUFF + DAMAGE_BONUS` | 데미지 직접 추가 | 처리기 연결 |
+| `BUFF + RAGE` | 분노 | 미구현 ID로 표시 |
+| `BUFF + ATTACK_MULTIPLIER` | 데미지 배율 증가 | 미구현 |
+| `EXTRA_TURN + CURRENT_ACTION` | 플레이어 추가 턴 | 임시 ID 구현 |
+| `EXTRA_TURN + PLAYER_TURN` | 플레이어 추가 턴 | 최종 후보 ID 미연결 |
+| `DECK_CAPACITY + MAIN_DECK` | 사용자 덱 용량 증가 | 값 보존만 지원 |
+| `DRAW + MAIN_DECK` | 주머니 추가 드로우 | 구현 |
+| `PLACEMENT_COUNT + CURRENT_ACTION` | 블록 배치 횟수 증가 | 임시 ID 구현 |
+| `PLACEMENT_COUNT + BLOCK_PLACEMENT` | 블록 배치 횟수 증가 | 최종 후보 ID 미연결 |
 
 현재 전투에는 별도 방어력 능력치가 없고 소모형 방어도만 존재하므로
 `BUFF/DEBUFF + DEFENSE`는 허용하지 않는다. 방어도 획득은 `BLOCK`으로 저장한다.
@@ -623,7 +648,7 @@ PLACEMENT_COUNT
 |---|---|---|
 | `B` | 기초 공격력 | 이번 행동의 모든 `BASE_DAMAGE.value` 합 |
 | `P` | 버프 데미지 추가 값 | 기존 `BUFF + DAMAGE_BONUS` 상태 |
-| `H` | 연속 공격 횟수 | 각 `BASE_HIT_COUNT.parameters.intensify` 또는 기존 `BUFF + HIT_COUNT` |
+| `H` | 이번 행동의 총 기본 공격 횟수 | `BASE_HIT_COUNT.parameters.intensify` |
 | `A` | 독립 공격 기준값 | 각 `INDEPENDENT_DAMAGE.value` |
 | `M` | 공격력 배율 | 기존 `BUFF + ATTACK_MULTIPLIER` 상태 |
 | `D` | 공격력 감쇄 계수 | 공격자의 기존 `DEBUFF + ATTACK_REDUCTION` 상태 |
@@ -636,10 +661,9 @@ PLACEMENT_COUNT
 
 ```text
 BASE_DAMAGE                     → B
-BASE_HIT_COUNT                  → value 데미지 × intensify회 연속 공격
+BASE_HIT_COUNT                  → value를 B, intensify를 H로 사용
 INDEPENDENT_DAMAGE              → A
 BUFF + DAMAGE_BONUS             → S → 이후 P
-BUFF + HIT_COUNT                → S → 이후 H
 BUFF + ATTACK_MULTIPLIER        → S → 이후 M
 DEBUFF + ATTACK_REDUCTION       → C → 이후 D
 DEBUFF + DAMAGE_TAKEN_INCREASE  → C → 이후 W
@@ -653,11 +677,7 @@ B = Σ(BASE_DAMAGE.value)
 
 P = Σ(DAMAGE_BONUS.value × 현재 스택)
 
-BASE_HIT_COUNT 연속 공격 피해
-  = value × parameters.intensify
-
-기존 HIT_COUNT 버프가 적용된 기본 공격 횟수
-  = baseHitCount + Σ(기존 HIT_COUNT.value × 현재 스택)
+H = BASE_HIT_COUNT.parameters.intensify
 
 개별 공격력 배율 = 1 + (value × 현재 스택 / 100)
 M = Π(개별 공격력 배율)
@@ -674,25 +694,25 @@ W = 1 + Σ(DAMAGE_TAKEN_INCREASE.value × 현재 스택 / 100)
 
 상태 피해는 `B~W` 공식에 직접 합산하지 않는다. `STATUS_DAMAGE`를 `C`에
 등록해 대상 상태에 반영한 뒤, 본 게임이 턴 종료 시 `parameters.id`에 맞는
-전용 규칙을 실행한다. 예를 들어 `BURN`과 `BLEED`의 서로 다른 계산법은
+전용 규칙을 실행한다. 예를 들어 `BURN`과 `BLEEDING`의 서로 다른 계산법은
 Designer가 아니라 본 게임의 효과 실행기가 선택한다.
 
 ### 8.5 효과 예시
 
-#### 현재 행동의 기본 공격 횟수 증가
+#### 이번 행동의 연속 기본 공격
 
 ```json
 {
   "effect_id": "double_strike_01",
-  "effect_name": "3연속 공격",
-  "description": "선택한 대상에게 데미지 5의 공격을 3회 적용한다.",
+  "effect_name": "6연속 기본 공격",
+  "description": "선택한 대상에게 B 5의 기본 공격을 6회 실행한다.",
   "target": "SELECTED",
   "value": 5,
   "type": "BASE_HIT_COUNT",
   "parameters": {
     "id": "CURRENT_ACTION",
     "duration": 0,
-    "intensify": 3
+    "intensify": 6
   }
 }
 ```
@@ -766,7 +786,7 @@ Designer가 아니라 본 게임의 효과 실행기가 선택한다.
 ```text
 1. BASE_DAMAGE를 모아 B 계산
 2. 공격자의 기존 BUFF에서 P, H, M 계산
-3. BASE_HIT_COUNT마다 `value` 데미지의 공격을 `intensify`회 실행
+3. BASE_HIT_COUNT의 `value`를 B, `intensify`를 H로 적용
 4. 공격자의 기존 DEBUFF에서 D 계산
 5. 기본 공격을 H회 실행하고 실제 대상마다 W 계산
 6. INDEPENDENT_DAMAGE를 각각 별도 실행하고 실제 대상마다 W 계산
@@ -901,15 +921,20 @@ Designer와 본 게임은 이 순서를 동일하게 사용해야 한다.
 
 - `type`을 먼저 선택하면 해당 타입에서 허용하는 `parameters.id`만 표시한다.
 - 사용하지 않는 매개변수도 숨겨서 누락하지 않고 정해진 기본값으로 고정한다.
-- `BASE_HIT_COUNT`를 선택하면 `value`를 데미지,
-  `intensify`를 1 이상의 연속 공격 횟수로 입력하게 하고,
-  `id: CURRENT_ACTION`, `duration: 0`은 수정할 수 없게 한다.
 - `BASE_DAMAGE`, `INDEPENDENT_DAMAGE`, `BLOCK`, `RECOVERY`는
   `id: NONE`, `duration: 0`, `intensify: 0`을 자동 설정한다.
+- `BASE_HIT_COUNT`는 `id: CURRENT_ACTION`, `duration: 0`을 고정하고
+  `value`를 1타의 B, `intensify`를 총 공격 횟수 H로 입력한다.
 - `BUFF`, `DEBUFF`, `STATUS_DAMAGE`, `CROWD_CONTROL`은 `id`, `duration`,
   `intensify`를 사용자가 명시적으로 입력하게 한다.
 - `ATTACK_MULTIPLIER`, `ATTACK_REDUCTION`,
-  `DAMAGE_TAKEN_INCREASE`의 `value` 입력란에는 정수 퍼센트 단위임을 표시한다.
+  `DAMAGE_TAKEN_INCREASE`의 `value`는 `10`과 `0.1`을 모두 10%로 해석한다.
+- `STUN`은 `duration: 1`, `intensify: 1`로 고정하고 `value`를 무시한다.
+- `EXTRA_TURN + CURRENT_ACTION`, `DRAW + MAIN_DECK`,
+  `PLACEMENT_COUNT + CURRENT_ACTION`은 `duration: 0`, `intensify: 1`로
+  고정한다.
+- 미구현·미연결 ID는 드롭다운에서 `(미구현 ID)`를 함께 표시하되 JSON에는
+  원래 Parameters ID만 저장한다.
 - 효과 목록에서 배열 순서를 위·아래로 이동할 수 있어야 하며, 저장 시 그
   순서를 보존한다.
 - UI 표시 설명은 저장된 필드로부터 미리보기를 만들 수 있지만,
@@ -936,10 +961,12 @@ Designer와 본 게임은 이 순서를 동일하게 사용해야 한다.
 - 8장 효과의 필수 필드 누락
 - 8장에서 허용하지 않은 `target`, `type` 또는 `parameters.id`
 - `parameters.id`, `duration`, `intensify` 누락
-- `BASE_HIT_COUNT`의 `id`, `duration`이 `CURRENT_ACTION`, `0`과 다름
-- `BASE_HIT_COUNT.intensify`가 1 미만
 - 즉시 효과의 사용하지 않는 매개변수가 `NONE`, `0`, `0` 규칙과 다름
-- 비율 효과의 `value`가 정수가 아님
+- `BASE_HIT_COUNT`가 `CURRENT_ACTION`, `duration: 0`, `intensify: 1+`
+  규칙과 다름
+- 횟수·용량 효과의 `value`가 정수가 아님
+- 숫자 `value`가 NaN 또는 무한대임
+- 효과별 고정 `duration`, `intensify` 규칙과 다름
 
 ### 11.2 경고
 
@@ -1037,8 +1064,8 @@ src/blockable_block_designer/
 - 유효성 검사는 UI 이벤트와 분리한다.
 - 효과 편집기는 8장 스키마를 입력 양식으로 표현할 뿐 효과를 실행하지 않는다.
 - `type`을 선택하면 허용되는 `parameters.id` 후보와 기본값을 결정한다.
-- `BASE_HIT_COUNT`는 `CURRENT_ACTION`, `duration: 0`으로 고정하고,
-  `intensify`에 1 이상의 연속 공격 횟수를 저장한다.
+- 본 게임 연결 상태가 미구현인 ID도 데이터 작성은 허용하되 UI에 상태를
+  표시하고, 알 수 없는 Type이나 Parameters ID는 오류로 처리한다.
 
 ---
 
@@ -1061,7 +1088,7 @@ src/blockable_block_designer/
 - `block_type.grade`와 `block_type.color` 보존
 - 빈 `effects[]` 보존
 - 모든 효과의 `parameters.id`, `duration`, `intensify` 보존
-- `BASE_HIT_COUNT` 왕복 보존
+- 정수·소수 `value` 왕복 보존
 - `reference_id`를 새 JSON에 다시 저장하지 않음
 - 배열 순서 보존
 - 상위 스키마 버전 차단
@@ -1076,7 +1103,7 @@ src/blockable_block_designer/
 - 잘못된 등급·색상
 - 8장 효과 필수 필드 누락
 - `type`별 허용되지 않은 `parameters.id`
-- `BASE_HIT_COUNT`의 고정 ID·duration 또는 연속 공격 횟수 위반
+- `STUN`, 현재 행동 추가 턴, 드로우, 현재 행동 배치 효과의 고정 매개변수 위반
 - `value`, `duration`, `intensify` 형식 오류
 
 ---

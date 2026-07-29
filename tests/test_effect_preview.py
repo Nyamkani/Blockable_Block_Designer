@@ -9,12 +9,13 @@ from blockable_block_designer.domain.models import (
 from blockable_block_designer.services.effect_preview import (
     combination_effect_preview,
 )
+from blockable_block_designer.ui.effect_editor import EffectDialog
 
 
 def _effect(
     effect_id: str,
     effect_type: str,
-    value: int,
+    value: int | float,
     target: str = "self",
 ) -> Effect:
     return Effect(
@@ -74,14 +75,26 @@ def test_combination_preview_keeps_different_attack_ranges_separate() -> None:
     ]
 
 
-def test_combination_preview_shows_consecutive_attack_damage_and_count() -> None:
-    attack = _effect("triple", "BASE_HIT_COUNT", 7, "R2")
-    attack.parameter_id = "CURRENT_ACTION"
-    attack.intensify = 3
-    combination = Combination("triple_combo", "삼연격", effects=[attack])
+def test_combination_preview_uses_parameter_display_name_and_decimal_value() -> None:
+    weakness = _effect("weakness", "DEBUFF", 0.1, "SELECTED")
+    weakness.parameter_id = "ATTACK_REDUCTION"
+    weakness.intensify = 3
+    combination = Combination("weak_combo", "약화 조합", effects=[weakness])
 
     assert combination_effect_preview(Project(), combination) == [
-        "삼연격: 연속 공격: 데미지 7 × 3회 [기준+오른쪽 2칸]"
+        "약화 조합: 약화 0.1"
+    ]
+
+
+def test_combination_preview_shows_base_damage_and_total_hit_count() -> None:
+    attack = _effect("six_hits", "BASE_HIT_COUNT", 5, "B1")
+    attack.parameter_id = "CURRENT_ACTION"
+    attack.duration = 0
+    attack.intensify = 6
+    combination = Combination("multi_hit", "연속 공격", effects=[attack])
+
+    assert combination_effect_preview(Project(), combination) == [
+        "연속 공격: 연속 기본 공격: B 5 × H 6 [기준+좌우 1칸]"
     ]
 
 
@@ -89,3 +102,18 @@ def test_combination_preview_handles_empty_selection() -> None:
     assert combination_effect_preview(Project(), None) == [
         "조합식을 선택하면 예상 효과가 표시됩니다."
     ]
+
+
+def test_unimplemented_parameter_ids_are_labeled_without_changing_json_id() -> None:
+    assert (
+        EffectDialog._parameter_option_label("STATUS_DAMAGE", "POISON")
+        == "POISON (미구현 ID)"
+    )
+    assert (
+        EffectDialog._parameter_option_label("EXTRA_TURN", "PLAYER_TURN")
+        == "PLAYER_TURN (미구현 ID)"
+    )
+    assert (
+        EffectDialog._parameter_option_label("STATUS_DAMAGE", "BURN")
+        == "BURN"
+    )

@@ -1,6 +1,6 @@
 # Blockable Block Design Codex 연동 지침
 
-현재 프로그램 버전: `v1.3.0`
+현재 프로그램 버전: `v1.3.1`
 현재 JSON 스키마: `1.1.0`
 
 ## 0. 현재 기준 디자인 JSON
@@ -8,22 +8,24 @@
 현재 Codex 연동의 기준 데이터는 다음 파일이다.
 
 ```text
-examples/blockable_block_design_beta_migrated.json
+examples/blockable_block_design.json
 ```
 
-이 파일은 이전 Beta 출력물을 원본 보존 원칙에 따라 별도 변환한 결과다.
-문서에 적힌 수치보다 이 JSON의 실제 데이터가 우선한다.
+이 파일은 이전 Beta 출력물을 현행 계약으로 마이그레이션한 현재 기준
+디자인이다. 문서에 적힌 수치보다 이 JSON의 실제 데이터가 우선한다.
 
 현재 데이터 스냅샷:
 
 - 블록: 28개
 - 조합식: 45개
-- 효과: 68개
-- 효과 Type: `BASE_DAMAGE` 38개, `BLOCK` 18개, `DEBUFF` 2개,
-  `DRAW` 5개, `RECOVERY` 5개
-- 효과 대상: `SELECTED` 40개, `self` 28개
+- 효과: 72개
+- 효과 Type: `BASE_DAMAGE` 40개, `BASE_HIT_COUNT` 1개, `BLOCK` 18개,
+  `DEBUFF` 2개, `DRAW` 5개, `RECOVERY` 5개, `STATUS_DAMAGE` 1개
+- 효과 대상: `SELECTED` 43개, `all` 1개, `self` 28개
+- Parameters ID: `NONE` 63개, `CURRENT_ACTION` 1개, `BLEEDING` 1개,
+  `DAMAGE_TAKEN_INCREASE` 2개, `MAIN_DECK` 5개
 - 검증 오류: 0개
-- 검증 경고: 33개
+- 검증 경고: 32개
 
 경고는 분리된 블록 모양, 자체 효과 또는 기본 효과가 없는 항목, 조합식에서
 사용되지 않는 블록에 관한 것이다. 이는 데이터를 삭제해야 한다는 의미가
@@ -93,7 +95,7 @@ Designer의 재사용 효과 설정은 디자인 JSON이 아니라 프로젝트 
 게임 공통 시스템에서 수행한다.
 
 Designer의 조합판 아래 `예상 효과`는 배치 인스턴스가 참조하는 블록 효과와
-조합식 자체 효과의 정수 `value`를 Type별로 합산한 편집용 표시다. 이 화면
+조합식 자체 효과의 숫자 `value`를 Type과 Parameters ID별로 합산한 편집용 표시다. 이 화면
 문구를 JSON 필드나 런타임 결과로 읽지 않는다. 색상·등급 시너지와 전투 상태에
 따른 최종 결과는 포함하지 않으며, 본 게임이 JSON 원본으로 다시 계산한다.
 공격 계열 Type은 저장된 `target`을 한글 범위로 함께 표시하며, 서로 다른
@@ -106,23 +108,24 @@ Designer의 조합판 아래 `예상 효과`는 배치 인스턴스가 참조하
 ```json
 {
   "effect_id": "double_strike_01",
-  "effect_name": "3연속 공격",
-  "description": "선택한 대상에게 데미지 5의 공격을 3회 적용한다.",
+  "effect_name": "6연속 기본 공격",
+  "description": "선택한 대상에게 B 5의 기본 공격을 6회 실행한다.",
   "target": "SELECTED",
   "value": 5,
   "type": "BASE_HIT_COUNT",
   "parameters": {
     "id": "CURRENT_ACTION",
     "duration": 0,
-    "intensify": 3
+    "intensify": 6
   }
 }
 ```
 
 필수 규칙:
 
-- `value`는 음수·0·양수를 허용하는 정수다.
-- 비율도 정수 퍼센트로 해석한다.
+- `value`는 음수·0·양수를 허용하는 유한한 숫자다.
+- 비율은 임시로 `10`과 `0.1`을 모두 10%로 해석한다.
+- 횟수·용량 효과의 `value`는 정수다.
 - 대상은 `SELECTED`, `self`, `Lx`, `Rx`, `Bx`, `all` 형식이다.
 - 모든 효과에 `parameters.id`, `duration`, `intensify`가 존재해야 한다.
 - `duration`: `0` 즉시, `1+` 지속 턴, `-1` 전투 종료까지, `-2` 영구
@@ -139,23 +142,41 @@ Designer의 조합판 아래 `예상 효과`는 배치 인스턴스가 참조하
 | `INDEPENDENT_DAMAGE` | `NONE` |
 | `BLOCK` | `NONE` |
 | `RECOVERY` | `NONE` |
-| `STATUS_DAMAGE` | `BURN`, `BLEED`, `POISON` |
+| `STATUS_DAMAGE` | `BURN`, `BLEEDING`, `POISON` |
 | `DEBUFF` | `ATTACK_REDUCTION`, `DAMAGE_TAKEN_INCREASE` |
 | `CROWD_CONTROL` | `STUN`, `FREEZE`, `ACTION_LOCK` |
-| `BUFF` | `DAMAGE_BONUS`, `HIT_COUNT`, `ATTACK_MULTIPLIER` |
-| `EXTRA_TURN` | `PLAYER_TURN` |
+| `BUFF` | `DAMAGE_BONUS`, `RAGE`, `ATTACK_MULTIPLIER` |
+| `EXTRA_TURN` | `CURRENT_ACTION`, `PLAYER_TURN` |
 | `DECK_CAPACITY` | `MAIN_DECK` |
 | `DRAW` | `MAIN_DECK` |
-| `PLACEMENT_COUNT` | `BLOCK_PLACEMENT` |
+| `PLACEMENT_COUNT` | `CURRENT_ACTION`, `BLOCK_PLACEMENT` |
 
 `BASE_DAMAGE`, `INDEPENDENT_DAMAGE`, `BLOCK`, `RECOVERY`는 `NONE/0/0`을
 사용한다.
+`BASE_HIT_COUNT`는 `value`를 기본 공격 1타의 B,
+`parameters.intensify`를 이번 행동의 총 공격 횟수 H로 사용하며
+`CURRENT_ACTION/duration: 0`으로 고정한다. `BUFF + HIT_COUNT`는 삭제된
+구성이므로 만들지 않는다.
 
-Designer에서 `BASE_HIT_COUNT.value`는 1회당 데미지이고
-`parameters.intensify`는 1 이상의 연속 공격 횟수다.
-`parameters.id/duration`은 `CURRENT_ACTION/0`으로 고정한다.
-`BUFF + HIT_COUNT`는 상태가 적용된 이후 행동부터 반영되므로 서로 대체하면
-안 된다.
+본 게임 연결 기준:
+
+- 구현: `BURN`, `BLEEDING`, `ATTACK_REDUCTION`,
+  `DAMAGE_TAKEN_INCREASE`, `STUN`, `BASE_HIT_COUNT + CURRENT_ACTION`,
+  `DRAW + MAIN_DECK`
+- 처리기 연결: `DAMAGE_BONUS`
+- 임시 ID 구현: `EXTRA_TURN + CURRENT_ACTION`,
+  `PLACEMENT_COUNT + CURRENT_ACTION`
+- 파싱·값 보존만 지원: `DECK_CAPACITY + MAIN_DECK`
+- 미구현 또는 최종 ID 미연결: `POISON`, `FREEZE`, `ACTION_LOCK`, `RAGE`,
+  `ATTACK_MULTIPLIER`, `EXTRA_TURN + PLAYER_TURN`,
+  `PLACEMENT_COUNT + BLOCK_PLACEMENT`
+
+`STUN`은 `duration: 1/intensify: 1`을 사용한다.
+`EXTRA_TURN + CURRENT_ACTION`, `DRAW + MAIN_DECK`,
+`PLACEMENT_COUNT + CURRENT_ACTION`은 `duration: 0/intensify: 1`을 사용한다.
+미구현·미연결 ID는 Designer에서 `(미구현 ID)`로 표시하지만 JSON에는 원래
+ID만 저장한다. 알 수 없는 Type이나 Parameters ID는 조용히 무시하지 않고
+오류로 보고한다.
 
 ## 6. 레거시 변환
 
@@ -174,7 +195,10 @@ Designer에서 `BASE_HIT_COUNT.value`는 1회당 데미지이고
 - 모든 조합 인스턴스가 존재하는 블록을 참조하는가
 - 등급과 색상이 허용값인가
 - 대상과 Type, Parameters ID가 허용값인가
-- `value`, `duration`, `intensify`가 정수인가
+- `value`가 유한한 숫자이고 횟수·용량 값만 정수인가
+- `duration`, `intensify`가 정수인가
 - 즉시 효과의 고정 매개변수가 맞는가
-- `BASE_HIT_COUNT`가 `CURRENT_ACTION/0`과 1 이상의 `intensify`를 사용하는가
+- `BASE_HIT_COUNT`가 `CURRENT_ACTION/duration: 0/intensify: 1+` 규칙을
+  지키는가
+- 효과별 고정 `duration`, `intensify`가 맞는가
 - 효과 배열 순서를 보존하는가

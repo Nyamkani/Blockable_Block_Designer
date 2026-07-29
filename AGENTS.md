@@ -22,9 +22,11 @@ ambiguous legacy data for review rather than inventing runtime semantics.
 
 ## Documentation maintenance
 
-When the project plan, program behavior, JSON contract, package path, execution command,
-or required workflow changes, update
-`docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md` in the same task.
+Do not update project documents automatically when code, behavior, or data changes.
+Update documents only when the user explicitly requests a documentation update. When
+the user does request it, synchronize the relevant plan, manual, update history, and
+`docs/BLOCKABLE_BLOCK_DESIGN_CODEX_INTERACTION_INSTRUCTION.md` with the current code
+and authoritative JSON as applicable.
 
 Documentation filenames added or renamed from now on must use uppercase names
 (the `.md` extension remains lowercase).
